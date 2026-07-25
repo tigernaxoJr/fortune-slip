@@ -220,9 +220,20 @@ export async function interpretOracle(
 
       if (res.ok) {
         const data = await res.json()
-        const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text
-        if (typeof candidateText === 'string' && candidateText.length > 0) {
-          const cleaned = removeThoughtTags(candidateText)
+        const parts: any[] = data?.candidates?.[0]?.content?.parts || []
+
+        // Filter out parts marked with thought: true (or thought field) and join actual answer text
+        const nonThoughtTexts = parts
+          .filter((part) => !part.thought && !part.thoughtProcess)
+          .map((part) => (typeof part.text === 'string' ? part.text : ''))
+          .filter((t) => t.length > 0)
+
+        const rawCombinedText = nonThoughtTexts.length > 0
+          ? nonThoughtTexts.join('\n')
+          : parts.map((part) => (typeof part.text === 'string' ? part.text : '')).join('\n')
+
+        if (rawCombinedText) {
+          const cleaned = removeThoughtTags(rawCombinedText)
           if (cleaned) return cleaned
         }
       }
