@@ -7,6 +7,34 @@ export interface AiSettings {
   model: string
 }
 
+export interface CspPreset {
+  id: string
+  name: string
+  baseUrl: string
+  defaultModel: string
+}
+
+export const defaultCspPresets: readonly CspPreset[] = [
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+    defaultModel: 'gpt-4o-mini',
+  },
+  {
+    id: 'google',
+    name: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    defaultModel: 'gemini-2.5-flash',
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    defaultModel: 'deepseek-chat',
+  },
+]
+
 const systemPrompt = `你是一位熟悉華人籤詩文化、語氣沉穩而誠懇的解籤者。請使用繁體中文，根據「使用者所問之事」與籤詩文本一起解讀。不要把籤詩說成必然預言，不恐嚇，不虛構典故；醫療、法律、財務或人身安全議題應提醒尋求合格專業協助。回答請包含：核心籤意、回應所問、可採取的三項行動、需要留意之處。`
 
 const sanitizeEndpoint = (baseUrl: string) => {
@@ -31,6 +59,36 @@ export function removeThoughtTags(text: string): string {
     .replace(/<(?:thought|think)[\s\S]*?<\/(?:thought|think)>/gi, '')
     .replace(/<(?:thought|think)[\s\S]*/gi, '')
     .trim()
+}
+
+export async function fetchModels(settings: { apiKey: string; baseUrl: string }): Promise<string[]> {
+  if (!settings.apiKey.trim()) throw new Error('請填寫 API Key 後再讀取模型列表')
+  const baseURL = sanitizeEndpoint(settings.baseUrl)
+
+  const openai = new OpenAI({
+    apiKey: settings.apiKey.trim(),
+    baseURL,
+    dangerouslyAllowBrowser: true,
+  })
+
+  try {
+    const list = await openai.models.list()
+    const models = list.data
+      .map((item) => item.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      .sort((a, b) => a.localeCompare(b))
+
+    if (!models.length) throw new Error('伺服器未回傳可用的模型列表')
+    return models
+  } catch (error) {
+    if (error instanceof Error && error.message) {
+      if (error.name === 'APIConnectionError' || error.message.includes('fetch')) {
+        throw new Error('無法連線至模型列表 Endpoint；請確認網址、API Key 與跨網域 (CORS) 設定')
+      }
+      throw error
+    }
+    throw error
+  }
 }
 
 export async function interpretOracle(

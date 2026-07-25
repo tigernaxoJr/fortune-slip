@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
 import { deckById, decks, drawFrom, type DeckId, type OracleVerse } from './data/decks'
-import { interpretOracle } from './services/ai'
+import { defaultCspPresets, fetchModels, interpretOracle, type CspPreset } from './services/ai'
 
 const selectedId = ref<DeckId>('jiazi')
 const question = ref('')
@@ -16,13 +16,52 @@ const apiKey = ref('')
 const baseUrl = ref(localStorage.getItem('oracle-base-url') || 'https://api.openai.com/v1')
 const model = ref(localStorage.getItem('oracle-model') || 'gpt-4o-mini')
 
+const fetchedModels = ref<string[]>([])
+const isFetchingModels = ref(false)
+const modelNotice = ref('')
+
 const selectedDeck = computed(() => deckById(selectedId.value))
+
+const selectedPresetId = computed(() => {
+  const match = defaultCspPresets.find(
+    (p) => p.baseUrl.toLowerCase() === baseUrl.value.trim().toLowerCase(),
+  )
+  return match ? match.id : 'custom'
+})
 
 function chooseDeck(id: DeckId) {
   selectedId.value = id
   result.value = null
   aiAnswer.value = ''
   notice.value = ''
+}
+
+function applyPreset(preset: CspPreset) {
+  baseUrl.value = preset.baseUrl
+  model.value = preset.defaultModel
+  fetchedModels.value = []
+  modelNotice.value = ''
+}
+
+async function loadModels() {
+  if (!apiKey.value.trim()) {
+    modelNotice.value = '請先填寫 API Key 再讀取模型列表'
+    return
+  }
+  modelNotice.value = ''
+  isFetchingModels.value = true
+  try {
+    const list = await fetchModels({ apiKey: apiKey.value, baseUrl: baseUrl.value })
+    fetchedModels.value = list
+    if (list.length > 0 && !list.includes(model.value)) {
+      model.value = list[0]
+    }
+    modelNotice.value = `已成功讀取 ${list.length} 個可用模型`
+  } catch (err) {
+    modelNotice.value = err instanceof Error ? err.message : '讀取模型失敗'
+  } finally {
+    isFetchingModels.value = false
+  }
 }
 
 async function drawOracle() {
@@ -336,6 +375,26 @@ async function askAi() {
           支援 OpenAI 相容的 <code>/chat/completions</code> API。
           金鑰只保留在此分頁記憶中，關閉分頁後即清除。
         </p>
+
+        <div class="preset-section">
+          <span class="field-title">選擇服務商預設 (CSP)</span>
+          <div class="preset-chips">
+            <button
+              v-for="preset in defaultCspPresets"
+              :key="preset.id"
+              type="button"
+              class="preset-chip"
+              :class="{ active: selectedPresetId === preset.id }"
+              @click="applyPreset(preset)"
+            >
+              {{ preset.name }}
+            </button>
+            <span class="preset-chip disabled" :class="{ active: selectedPresetId === 'custom' }">
+              自訂 Base URL
+            </span>
+          </div>
+        </div>
+
         <label>
           <span>API Key</span>
           <input v-model="apiKey" type="password" autocomplete="off" placeholder="sk-…" required>
@@ -344,10 +403,30 @@ async function askAi() {
           <span>Base URL</span>
           <input v-model="baseUrl" type="url" inputmode="url" placeholder="https://api.openai.com/v1" required>
         </label>
-        <label>
-          <span>模型名稱</span>
-          <input v-model="model" type="text" placeholder="gpt-4o-mini" required>
-        </label>
+
+        <div class="model-group">
+          <label class="model-label">
+            <div class="model-label-head">
+              <span>模型名稱</span>
+              <button
+                type="button"
+                class="fetch-models-btn"
+                :disabled="isFetchingModels || !apiKey.trim()"
+                @click="loadModels"
+              >
+                {{ isFetchingModels ? '讀取中…' : '讀取模型列表 ↻' }}
+              </button>
+            </div>
+            <select v-if="fetchedModels.length" v-model="model" required class="model-select">
+              <option v-for="m in fetchedModels" :key="m" :value="m">{{ m }}</option>
+            </select>
+            <input v-else v-model="model" type="text" placeholder="gpt-4o-mini / gemini-2.5-flash / deepseek-chat" required>
+          </label>
+          <p v-if="modelNotice" class="model-status" :class="{ error: modelNotice.includes('失敗') || modelNotice.includes('無法') || modelNotice.includes('請') }">
+            {{ modelNotice }}
+          </p>
+        </div>
+
         <p class="security-note"><span>●</span> 遠端服務僅允許 HTTPS，避免金鑰在傳輸途中外洩。</p>
         <button class="save-button" type="submit">儲存並返回求籤</button>
       </form>

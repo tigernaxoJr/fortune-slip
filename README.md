@@ -24,3 +24,5 @@ http://www.chance.org.tw/%E7%B1%A4%E8%A9%A9%E9%9B%86/%E5%85%AD%E5%8D%81%E7%94%B2
 ## TODO
 
 - [x] 必須包含網址中籤詩的各項屬性，包含籤詩故事、移居, 年冬 詞訟, 歲君, 六甲, 尋, 人人, 病, 作事... 等等
+- [x] 解籤得到 <thought> tag, 避免顯示, 最好是用操作 llm api 的套件處理
+- [x] 加入兩個預設 csp ，包含 openai compatible api url 給使用者選擇，然後可以透過 url, apikey 讀取 csp 的 models 給使用者選
