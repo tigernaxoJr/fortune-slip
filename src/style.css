@@ -438,6 +438,71 @@ a { color: inherit; }
   font: 500 13px/1.6 'Noto Serif TC', serif;
 }
 
+.temple-ai-toggle {
+  margin-top: 18px;
+  padding: 16px 20px;
+  background: rgba(36, 23, 16, 0.7);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-align: left;
+  transition: all .25s ease;
+}
+.temple-ai-toggle:hover {
+  border-color: var(--gold);
+}
+.toggle-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.toggle-title {
+  color: #fff;
+  font: 700 14px/1 'Noto Serif TC', serif;
+  letter-spacing: .08em;
+}
+.toggle-desc {
+  margin: 8px 0 0 28px;
+  color: var(--gold-soft);
+  font: 400 12px/1.6 'Noto Serif TC', serif;
+  letter-spacing: .02em;
+}
+
+.traditional-mode-banner {
+  margin-top: 18px;
+  padding: 20px 24px;
+  background: rgba(36, 23, 16, 0.75);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--gold-soft);
+  font: 400 14px/1.6 'Noto Serif TC', serif;
+  text-align: left;
+  animation: fadeInStep .3s ease-out;
+}
+.traditional-mode-banner .banner-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.traditional-mode-banner strong {
+  display: block;
+  color: #fff;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+.traditional-mode-banner p {
+  margin: 0;
+}
+
 /* 步驟 參：神龕與求籤祭壇 */
 .temple-shrine-altar {
   position: relative;
@@ -706,6 +771,50 @@ a { color: inherit; }
   display: grid;
   grid-template-columns: .9fr 1.1fr;
   gap: 28px;
+}
+.temple-result-layout.single-scroll {
+  grid-template-columns: 1fr;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.silent-prayer-notice {
+  max-width: 760px;
+  margin: 24px auto 0;
+  padding: 16px 20px;
+  background: rgba(36, 23, 16, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--gold-soft);
+  font: 400 13px/1.6 'Noto Serif TC', serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  animation: fadeInStep .4s ease-out;
+}
+.silent-prayer-notice .notice-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.silent-prayer-notice strong {
+  color: #fff;
+  font-weight: 600;
+}
+.silent-prayer-notice a {
+  color: var(--gold);
+  text-decoration: underline;
+  font-weight: 600;
+  transition: color .2s;
+}
+.silent-prayer-notice a:hover {
+  color: #fff;
+}
+.prayer-tip-banner {
+  margin-top: 12px;
+  color: var(--muted);
+  font: 400 12px/1.5 'Noto Serif TC', serif;
+  text-align: left;
 }
 
 /* 黃絹聖籤紙卡 */

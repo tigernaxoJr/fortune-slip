@@ -13,6 +13,7 @@ const isDrawing = ref(false)
 const isInterpreting = ref(false)
 const notice = ref('')
 const aiAnswer = ref('')
+const enableAiInterpretation = ref(true)
 const apiKey = ref('')
 const baseUrl = ref(localStorage.getItem('oracle-base-url') || 'https://api.openai.com/v1')
 const model = ref(localStorage.getItem('oracle-model') || 'gpt-4o-mini')
@@ -23,6 +24,7 @@ const modelNotice = ref('')
 
 const selectedDeck = computed(() => deckById(selectedId.value))
 const formattedVerseStories = computed(() => formatStories(result.value?.stories))
+const showAiPanel = computed(() => enableAiInterpretation.value)
 
 const steps = [
   { num: 1, symbol: '壹', label: '擇聖籤' },
@@ -60,10 +62,6 @@ function chooseDeck(id: DeckId) {
 
 function goToStep(step: 1 | 2 | 3 | 4) {
   if (step === 2 && !selectedId.value) return
-  if (step === 3 && question.value.trim().length < 2) {
-    notice.value = '請先淨心稟告所求所問，再行求籤。'
-    return
-  }
   if (step === 4 && !result.value) {
     performRitualAndDraw()
     return
@@ -78,20 +76,11 @@ function nextFromStep1() {
 }
 
 function nextFromStep2() {
-  if (question.value.trim().length < 2) {
-    notice.value = '請先誠心寫下稟告之事，再行下一步。'
-    return
-  }
   notice.value = ''
   goToStep(3)
 }
 
 async function performRitualAndDraw() {
-  if (question.value.trim().length < 2) {
-    notice.value = '請先誠心稟告所求之事，再行求籤。'
-    return
-  }
-
   notice.value = ''
   aiAnswer.value = ''
   result.value = null
@@ -170,9 +159,10 @@ async function askAi() {
   aiAnswer.value = ''
   isInterpreting.value = true
   try {
+    const qText = question.value.trim() || '信士心中默禱，求賜總體吉凶趨勢與行事指引'
     aiAnswer.value = await interpretOracle(
       { apiKey: apiKey.value, baseUrl: baseUrl.value, model: model.value },
-      question.value,
+      qText,
       selectedDeck.value,
       result.value,
     )
@@ -272,7 +262,19 @@ async function askAi() {
           </p>
         </div>
 
-        <div class="question-box temple-scroll-box">
+        <!-- AI 解籤服務切換卡片 -->
+        <div class="ai-toggle-card temple-ai-toggle" :class="{ active: enableAiInterpretation }">
+          <label class="toggle-control">
+            <input v-model="enableAiInterpretation" type="checkbox" class="toggle-checkbox">
+            <span class="toggle-title">✦ 啟用 AI 佛法靈析開示</span>
+          </label>
+          <p class="toggle-desc">
+            {{ enableAiInterpretation ? '開啟：可於下方撰寫稟告疏文，由 AI 結合您的所求事項與聖籤進行專屬深度開示。' : '關閉（傳統默禱參拜模式）：無須撰寫疏文，請於心中默禱，求籤結果僅呈現傳統聖籤與典故，不呼叫 AI 服務。' }}
+          </p>
+        </div>
+
+        <!-- 疏文輸入框（僅在啟用 AI 時顯示） -->
+        <div v-if="enableAiInterpretation" class="question-box temple-scroll-box">
           <div class="scroll-header">
             <span class="scroll-seal">疏文</span>
             <div class="selected-deck-pill temple-pill">
@@ -289,8 +291,9 @@ async function askAi() {
             ></textarea>
             <span class="char-count temple-char-count">{{ question.length }} / 300</span>
           </label>
-          <p v-if="notice" class="notice temple-notice" role="alert">{{ notice }}</p>
         </div>
+
+        <p v-if="notice" class="notice temple-notice" role="alert">{{ notice }}</p>
 
         <div class="step-actions dual-actions">
           <button class="back-step-btn temple-btn-secondary" type="button" @click="goToStep(1)">
@@ -381,7 +384,7 @@ async function askAi() {
           </div>
         </div>
 
-        <div class="result-layout temple-result-layout">
+        <div class="result-layout temple-result-layout" :class="{ 'single-scroll': !showAiPanel }">
           <!-- 黃絹聖籤卡片 -->
           <article class="fortune-paper temple-sacred-scroll">
             <div class="paper-corner top-left"></div>
@@ -450,10 +453,10 @@ async function askAi() {
             <p class="paper-foot temple-paper-foot">先觀其因，再問其果；吉中藏戒，凶中有路。</p>
           </article>
 
-          <!-- 右側 AI 佛意靈析面板 -->
-          <aside class="reading-panel temple-reading-panel">
-            <p class="panel-label temple-panel-label">信士所稟疏文</p>
-            <blockquote class="temple-blockquote">「{{ question.trim() }}」</blockquote>
+          <!-- 右側 AI 佛意靈析面板（有撰寫疏文且開啟 AI 時顯示） -->
+          <aside v-if="showAiPanel" class="reading-panel temple-reading-panel">
+            <p class="panel-label temple-panel-label">{{ question.trim() ? '信士所稟疏文' : '信士參拜心念' }}</p>
+            <blockquote class="temple-blockquote">「{{ question.trim() || '默禱參拜，求賜總體聖意開示' }}」</blockquote>
             <div class="divider temple-divider"><span>開示</span></div>
 
             <template v-if="aiAnswer">
@@ -485,6 +488,22 @@ async function askAi() {
               </button>
             </template>
           </aside>
+        </div>
+
+        <div v-if="!showAiPanel" class="silent-prayer-notice">
+          <span class="notice-icon">🌸</span>
+          <div class="notice-text">
+            <strong>{{ !enableAiInterpretation ? '信士選擇僅參拜求取傳統聖籤：' : '信士以默禱參拜求籤：' }}</strong>
+            <span>
+              聖籤古意與歷代典故已如上開示。
+              <template v-if="!enableAiInterpretation">
+                若需 AI 結合疏文開示，可點擊上方「<a href="#" @click.prevent="goToStep(2)">修改稟告疏文</a>」開啟 AI 靈析。
+              </template>
+              <template v-else>
+                如欲領受 AI 結合具體事項之開示，可點擊上方「<a href="#" @click.prevent="goToStep(2)">修改稟告疏文</a>」補寫所求事項。
+              </template>
+            </span>
+          </div>
         </div>
         <p v-if="notice" class="notice result-notice temple-notice" role="alert">{{ notice }}</p>
       </section>
