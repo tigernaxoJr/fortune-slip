@@ -83,7 +83,7 @@ async function performRitualAndDraw() {
   aiAnswer.value = ''
   result.value = null
   isDrawing.value = true
-  await new Promise((resolve) => window.setTimeout(resolve, 1500))
+  await new Promise((resolve) => window.setTimeout(resolve, 3200))
   result.value = drawFrom(selectedDeck.value)
   isDrawing.value = false
   currentStep.value = 4

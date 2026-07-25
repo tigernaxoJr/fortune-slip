@@ -236,14 +236,14 @@ a { color: inherit; }
   animation: pulse-glow 1.5s infinite alternate;
 }
 .oracle-pot.shaking {
-  animation: pot-shake .12s infinite alternate;
+  animation: pot-shake .42s ease-in-out infinite alternate;
 }
 @keyframes pulse-glow {
   to { transform: scale(1.05); box-shadow: 0 0 60px rgba(226,190,123,.9); }
 }
 @keyframes pot-shake {
-  from { transform: rotate(-3deg) translateY(0); }
-  to { transform: rotate(3deg) translateY(-4px); }
+  from { transform: rotate(-5deg) translateY(0); }
+  to { transform: rotate(5deg) translateY(-6px); }
 }
 
 .settings-link {
