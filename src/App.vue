@@ -4,7 +4,8 @@ import { deckById, decks, drawFrom, type DeckId, type OracleVerse } from './data
 import { defaultCspPresets, fetchModels, formatStories, interpretOracle, type CspPreset } from './services/ai'
 
 const currentStep = ref<1 | 2 | 3 | 4>(1)
-const selectedId = ref<DeckId>('jiazi')
+const maxStepReached = ref<1 | 2 | 3 | 4>(1)
+const selectedId = ref<DeckId | null>(null)
 const question = ref('')
 const result = ref<OracleVerse | null>(null)
 const resultSection = ref<HTMLElement>()
@@ -22,7 +23,7 @@ const fetchedModels = ref<string[]>([])
 const isFetchingModels = ref(false)
 const modelNotice = ref('')
 
-const selectedDeck = computed(() => deckById(selectedId.value))
+const selectedDeck = computed(() => deckById(selectedId.value ?? 'jiazi'))
 const formattedVerseStories = computed(() => formatStories(result.value?.stories))
 const showAiPanel = computed(() => enableAiInterpretation.value)
 
@@ -53,17 +54,27 @@ const availableModels = computed(() => {
   return presetModelsMap[selectedPresetId.value] || []
 })
 
+function isStepDisabled(stepNum: number) {
+  if (stepNum === 1) return false
+  if (stepNum === 2) return !selectedId.value || maxStepReached.value < 2
+  if (stepNum === 3) return maxStepReached.value < 3
+  if (stepNum === 4) return !result.value || maxStepReached.value < 4
+  return true
+}
+
 function chooseDeck(id: DeckId) {
   selectedId.value = id
   result.value = null
   aiAnswer.value = ''
   notice.value = ''
+  maxStepReached.value = Math.max(maxStepReached.value, 2) as 1 | 2 | 3 | 4
+  goToStep(2)
 }
 
 function goToStep(step: 1 | 2 | 3 | 4) {
-  if (step === 2 && !selectedId.value) return
-  if (step === 4 && !result.value) {
-    performRitualAndDraw()
+  if (isStepDisabled(step)) return
+  if (step === 3 && enableAiInterpretation.value && question.value.trim().length < 2) {
+    notice.value = '您已開啟 AI 靈析，請填寫稟告疏文；若無撰寫文字，請關閉 AI 靈析即可切換為傳統參拜模式。'
     return
   }
   notice.value = ''
@@ -72,11 +83,21 @@ function goToStep(step: 1 | 2 | 3 | 4) {
 }
 
 function nextFromStep1() {
+  if (!selectedId.value) {
+    notice.value = '請先點選欲參拜求取之諸佛聖籤庫。'
+    return
+  }
+  maxStepReached.value = Math.max(maxStepReached.value, 2) as 1 | 2 | 3 | 4
   goToStep(2)
 }
 
 function nextFromStep2() {
+  if (enableAiInterpretation.value && question.value.trim().length < 2) {
+    notice.value = '您已開啟 AI 靈析，請填寫稟告疏文；若無撰寫文字，請關閉 AI 靈析即可切換為傳統參拜模式。'
+    return
+  }
   notice.value = ''
+  maxStepReached.value = Math.max(maxStepReached.value, 3) as 1 | 2 | 3 | 4
   goToStep(3)
 }
 
@@ -88,6 +109,7 @@ async function performRitualAndDraw() {
   await new Promise((resolve) => window.setTimeout(resolve, 3200))
   result.value = drawFrom(selectedDeck.value)
   isDrawing.value = false
+  maxStepReached.value = 4
   currentStep.value = 4
   await nextTick()
   resultSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -97,6 +119,9 @@ function resetRitual() {
   result.value = null
   aiAnswer.value = ''
   notice.value = ''
+  selectedId.value = null
+  question.value = ''
+  maxStepReached.value = 1
   currentStep.value = 1
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -196,9 +221,9 @@ async function askAi() {
           :class="{
             active: currentStep === step.num,
             completed: currentStep > step.num,
-            disabled: (step.num === 2 && !selectedId) || (step.num >= 3 && question.trim().length < 2) || (step.num === 4 && !result)
+            disabled: isStepDisabled(step.num)
           }"
-          :disabled="(step.num === 2 && !selectedId) || (step.num >= 3 && question.trim().length < 2) || (step.num === 4 && !result)"
+          :disabled="isStepDisabled(step.num)"
           @click="goToStep(step.num)"
         >
           <span class="step-symbol">{{ step.symbol }}</span>
@@ -264,10 +289,21 @@ async function askAi() {
 
         <!-- AI 解籤服務切換卡片 -->
         <div class="ai-toggle-card temple-ai-toggle" :class="{ active: enableAiInterpretation }">
-          <label class="toggle-control">
-            <input v-model="enableAiInterpretation" type="checkbox" class="toggle-checkbox">
-            <span class="toggle-title">✦ 啟用 AI 佛法靈析開示</span>
-          </label>
+          <div class="toggle-main-row">
+            <label class="toggle-control">
+              <input v-model="enableAiInterpretation" type="checkbox" class="toggle-checkbox">
+              <span class="toggle-title">✦ 啟用 AI 佛法靈析開示</span>
+            </label>
+            <button
+              v-if="enableAiInterpretation"
+              type="button"
+              class="inline-settings-btn temple-btn-inline-settings"
+              @click="openSettings"
+            >
+              <span class="status-dot" :class="{ ready: apiKey }"></span>
+              ⚙️ 設定 API 金鑰 / 模型
+            </button>
+          </div>
           <p class="toggle-desc">
             {{ enableAiInterpretation ? '開啟：可於下方撰寫稟告疏文，由 AI 結合您的所求事項與聖籤進行專屬深度開示。' : '關閉（傳統默禱參拜模式）：無須撰寫疏文，請於心中默禱，求籤結果僅呈現傳統聖籤與典故，不呼叫 AI 服務。' }}
           </p>
@@ -277,6 +313,7 @@ async function askAi() {
         <div v-if="enableAiInterpretation" class="question-box temple-scroll-box">
           <div class="scroll-header">
             <span class="scroll-seal">疏文</span>
+            <span class="scroll-required-tag">（AI 解籤必填）</span>
             <div class="selected-deck-pill temple-pill">
               奉請籤庫：<strong>{{ selectedDeck.name }}</strong>（{{ selectedDeck.origin }}）
             </div>
