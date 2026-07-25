@@ -371,11 +371,14 @@ async function askAi() {
       <!-- 步驟 肆：黃絹聖籤解與 AI 佛意靈析 -->
       <section v-else-if="currentStep === 4 && result" ref="resultSection" class="step-view step-four result-section temple-result-section">
         <div class="result-heading temple-result-heading">
-          <div>
-            <p class="kicker temple-kicker">SACRED ORACLE</p>
+          <p class="kicker temple-kicker">SACRED ORACLE</p>
+          <div class="heading-main-row">
             <h2>感應所得之聖籤</h2>
+            <button type="button" class="temple-reset-btn" @click="resetRitual">
+              <span>重新參拜求籤</span>
+              <i class="reset-icon">↺</i>
+            </button>
           </div>
-          <button type="button" class="text-button temple-text-btn" @click="resetRitual">重新參拜求籤 ↺</button>
         </div>
 
         <div class="result-layout temple-result-layout">
