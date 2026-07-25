@@ -36,6 +36,12 @@ export async function interpretOracle(
   const timeout = window.setTimeout(() => controller.abort(), 60_000)
 
   try {
+    const storiesText = verse.stories?.length ? `\n籤詩故事：\n${verse.stories.join('\n')}` : ''
+    const attrText = verse.attributes && Object.keys(verse.attributes).length
+      ? `\n籤詩屬性：\n${Object.entries(verse.attributes).map(([k, v]) => `${k}：${v}`).join('；')}`
+      : ''
+    const expText = verse.explanations?.length ? `\n傳統解說明：\n${verse.explanations.join('\n')}` : ''
+
     const response = await fetch(endpointFor(settings.baseUrl), {
       method: 'POST',
       headers: {
@@ -49,7 +55,7 @@ export async function interpretOracle(
           { role: 'system', content: systemPrompt },
           {
             role: 'user',
-            content: `所問之事：${question.trim()}\n籤庫：${deck.name}\n籤號：第 ${verse.number} 籤\n籤詩：\n${verse.lines.join('\n')}`,
+            content: `所問之事：${question.trim()}\n籤庫：${deck.name}\n籤號：第 ${verse.number} 籤${verse.fortune ? `（${verse.fortune}）` : ''}${verse.ganzhi ? ` 【${verse.ganzhi}】` : ''}${verse.element ? ` ${verse.element}` : ''}\n籤詩：\n${verse.lines.join('\n')}${storiesText}${attrText}${expText}`,
           },
         ],
       }),

@@ -221,10 +221,44 @@ async function askAi() {
               <small>第</small>
               <strong>{{ result.number }}</strong>
               <small>籤</small>
+              <span v-if="result.fortune" class="fortune-rating-tag">{{ result.fortune }}</span>
+            </div>
+            <div v-if="result.ganzhi || result.element" class="ganzhi-banner">
+              <span v-if="result.ganzhi" class="ganzhi-pill">【{{ result.ganzhi }}】</span>
+              <span v-if="result.element" class="element-pill">{{ result.element }}</span>
             </div>
             <div class="poem">
               <p v-for="line in result.lines" :key="line">{{ line }}</p>
             </div>
+
+            <div v-if="result.stories && result.stories.length" class="verse-section verse-stories">
+              <div class="section-badge"><span>典故</span> 籤詩故事</div>
+              <ul class="story-list">
+                <li v-for="(story, idx) in result.stories" :key="idx">{{ story }}</li>
+              </ul>
+            </div>
+
+            <div v-if="result.attributes && Object.keys(result.attributes).length" class="verse-section verse-attributes">
+              <div class="section-badge"><span>屬性</span> 諸事指引</div>
+              <div class="attributes-grid">
+                <div
+                  v-for="(val, key) in result.attributes"
+                  :key="key"
+                  class="attr-chip"
+                >
+                  <span class="attr-key">{{ key }}</span>
+                  <span class="attr-val">{{ val }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="result.explanations && result.explanations.length" class="verse-section verse-explanations">
+              <div class="section-badge"><span>聖意</span> 傳統解曰</div>
+              <div class="explanations-content">
+                <p v-for="(exp, idx) in result.explanations" :key="idx">{{ exp }}</p>
+              </div>
+            </div>
+
             <p class="paper-foot">先觀其因，再問其果；吉中藏戒，凶中有路。</p>
           </article>
 

@@ -5,6 +5,12 @@ export type DeckId = keyof typeof oracleData
 export interface OracleVerse {
   number: number
   lines: readonly string[]
+  fortune?: string
+  ganzhi?: string
+  element?: string
+  stories?: readonly string[]
+  attributes?: Record<string, string>
+  explanations?: readonly string[]
 }
 
 export interface OracleDeck {
