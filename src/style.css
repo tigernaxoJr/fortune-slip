@@ -534,145 +534,367 @@ a { color: inherit; }
   margin: 0;
 }
 
-/* 步驟 參：神龕與求籤祭壇 */
+/* 步驟 參：神龕求靈籤與聖筊儀式 */
+.ritual-progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 520px;
+  margin: 12px auto 24px;
+  padding: 10px 18px;
+  background: rgba(22, 14, 10, 0.7);
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  color: var(--muted);
+  font: 500 13px/1 'Noto Serif TC', serif;
+}
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: .5;
+  transition: all .3s ease;
+}
+.progress-step.active {
+  opacity: 1;
+  color: var(--gold-soft);
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+}
+.progress-arrow {
+  color: var(--gold);
+  font-size: 11px;
+  opacity: .4;
+}
+
 .temple-shrine-altar {
   position: relative;
-  width: min(100%, 460px);
-  min-height: 380px;
-  margin: 20px auto 10px;
+  width: min(100%, 480px);
+  min-height: 400px;
+  margin: 10px auto 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-}
-.lotus-lamp {
-  position: absolute;
-  top: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.lamp-left { left: 10px; }
-.lamp-right { right: 10px; }
-.flame {
-  width: 12px;
-  height: 20px;
-  background: radial-gradient(circle at 50% 80%, #fff 20%, #f0cf74 60%, #a42c24 95%);
-  border-radius: 50% 50% 20% 20%;
-  box-shadow: 0 0 16px #f0cf74;
-  animation: flameFlicker 1.2s infinite alternate ease-in-out;
-}
-@keyframes flameFlicker {
-  0% { transform: scale(1) rotate(-1deg); opacity: 0.9; }
-  100% { transform: scale(1.1) rotate(2deg); opacity: 1; }
-}
-.lotus-base {
-  color: var(--gold);
-  font-size: 24px;
-  margin-top: 4px;
+  perspective: 1000px;
 }
 
-.temple-sun-disc {
+/* 背景太極八卦金光神輪 */
+.taoist-bagua-halo {
   position: absolute;
-  top: 20px;
-  width: 220px;
+  top: 10px;
+  width: 260px;
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.22) 0%, rgba(164, 44, 36, 0.08) 50%, transparent 70%);
   display: grid;
   place-items: center;
   transition: all .5s ease;
 }
-.buddha-mark {
+.outer-trigrams {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(212, 175, 55, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: baguaRotate 50s linear infinite;
+}
+.outer-trigrams span {
+  position: absolute;
   color: var(--gold);
-  font: 700 48px/1 'Noto Serif TC', serif;
+  font: 700 12px/1 'Noto Serif TC', serif;
   opacity: .85;
 }
-.temple-sun-disc.glowing {
-  box-shadow: 0 0 60px rgba(212,175,55,0.6);
-  animation: temple-pulse 1.8s infinite alternate;
-}
-@keyframes temple-pulse {
-  to { transform: scale(1.06); box-shadow: 0 0 80px rgba(212,175,55,0.85); }
+.outer-trigrams span:nth-child(1) { top: 6px; }
+.outer-trigrams span:nth-child(2) { top: 32px; right: 32px; }
+.outer-trigrams span:nth-child(3) { right: 6px; }
+.outer-trigrams span:nth-child(4) { bottom: 32px; right: 32px; }
+.outer-trigrams span:nth-child(5) { bottom: 6px; }
+.outer-trigrams span:nth-child(6) { bottom: 32px; left: 32px; }
+.outer-trigrams span:nth-child(7) { left: 6px; }
+.outer-trigrams span:nth-child(8) { top: 32px; left: 32px; }
+
+@keyframes baguaRotate {
+  to { transform: rotate(360deg); }
 }
 
+.inner-circle {
+  position: absolute;
+  width: 75%;
+  height: 75%;
+  border-radius: 50%;
+  border: 1px dashed rgba(212, 175, 55, 0.35);
+  animation: baguaRotate 30s linear infinite reverse;
+}
+
+.taiji-center-mark {
+  color: var(--gold);
+  font-size: 54px;
+  line-height: 1;
+  opacity: .9;
+  text-shadow: 0 0 25px rgba(212, 175, 55, 0.7);
+  animation: taijiSpin 20s linear infinite;
+}
+@keyframes taijiSpin {
+  to { transform: rotate(360deg); }
+}
+
+.taoist-bagua-halo.glowing {
+  box-shadow: 0 0 90px rgba(212, 175, 55, 0.85);
+  animation: baguaPulse 1.8s infinite alternate;
+}
+@keyframes baguaPulse {
+  to { transform: scale(1.08); box-shadow: 0 0 110px rgba(212, 175, 55, 0.95); }
+}
+
+/* 宣德古銅香爐與縷縷青煙 */
+.bronze-incense-burner {
+  position: absolute;
+  bottom: 80px;
+  left: 60px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.burner-body {
+  width: 40px;
+  height: 32px;
+  background: linear-gradient(180deg, #5c4028 0%, #291b10 100%);
+  border: 1px solid var(--gold);
+  border-radius: 4px 4px 16px 16px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.6);
+}
+.burner-seal {
+  color: var(--gold-soft);
+  font: 700 11px/1 'Noto Serif TC', serif;
+}
+.smoke-particles {
+  position: absolute;
+  bottom: 30px;
+}
 .incense {
   position: absolute;
-  bottom: 120px;
-  width: 2px;
-  height: 50px;
-  background: rgba(240, 207, 116, 0.3);
-  filter: blur(1px);
-  animation: smokeRise 3s infinite linear;
+  width: 3px;
+  height: 60px;
+  background: linear-gradient(180deg, rgba(240, 207, 116, 0.4) 0%, transparent 100%);
+  filter: blur(1.5px);
+  animation: smokeRise 3.2s infinite linear;
 }
-.incense-one { left: 45%; animation-delay: 0s; }
-.incense-two { left: 50%; animation-delay: 1s; }
-.incense-three { left: 55%; animation-delay: 2s; }
+.incense-one { left: -6px; animation-delay: 0s; }
+.incense-two { left: 0px; animation-delay: 1.1s; }
+.incense-three { left: 6px; animation-delay: 2.2s; }
 @keyframes smokeRise {
-  0% { transform: translateY(0) scaleX(1); opacity: 0; }
-  50% { opacity: 0.6; }
-  100% { transform: translateY(-70px) scaleX(3); opacity: 0; }
+  0% { transform: translateY(0) scaleX(1) rotate(0deg); opacity: 0; }
+  40% { opacity: 0.7; }
+  100% { transform: translateY(-80px) scaleX(3.5) rotate(15deg); opacity: 0; }
 }
 
-.temple-oracle-pot {
+/* 3D 雕花古風竹籤筒 */
+.temple-bamboo-cylinder {
   position: relative;
-  z-index: 2;
-  width: 140px;
-  height: 190px;
-  margin-bottom: 20px;
-  background: linear-gradient(180deg, #422d20 0%, #20130c 100%);
+  z-index: 3;
+  width: 145px;
+  height: 200px;
+  margin-bottom: 24px;
+  background: linear-gradient(180deg, #5a3d28 0%, #362214 60%, #1f120a 100%);
   border: 2px solid var(--gold);
-  border-radius: 12px 12px 24px 24px;
-  box-shadow: 0 16px 36px rgba(0,0,0,0.7), inset 0 0 15px rgba(212,175,55,0.2);
+  border-radius: 10px 10px 22px 22px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(212,175,55,0.25);
   display: flex;
   justify-content: center;
   align-items: flex-end;
+  transform-origin: bottom center;
 }
-.temple-oracle-pot.shaking {
-  animation: pot-shake .42s ease-in-out infinite alternate;
-}
-@keyframes pot-shake {
-  from { transform: rotate(-6deg) translateY(0); }
-  to { transform: rotate(6deg) translateY(-8px); }
-}
-.stick {
+.cylinder-band {
   position: absolute;
-  top: -45px;
-  width: 8px;
-  height: 110px;
-  background: linear-gradient(180deg, var(--gold-soft) 0%, #b8860b 100%);
-  border-radius: 4px 4px 0 0;
-  box-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #8a6435 0%, #f0cf74 50%, #8a6435 100%);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.6);
 }
-.s1 { left: 25px; transform: rotate(-10deg); }
-.s2 { left: 42px; transform: rotate(-4deg); }
-.s3 { left: 60px; transform: rotate(0deg); }
-.s4 { left: 78px; transform: rotate(5deg); }
-.s5 { left: 95px; transform: rotate(12deg); }
-.s6 { left: 110px; transform: rotate(18deg); }
+.top-band { top: 12px; }
+.mid-band { top: 96px; }
+.bot-band { bottom: 16px; }
+
+.temple-bamboo-cylinder.shaking {
+  animation: cylinderPhysicsShake 0.45s ease-in-out infinite alternate;
+}
+@keyframes cylinderPhysicsShake {
+  0% { transform: rotate(-8deg) translateY(0) scale(1); }
+  50% { transform: rotate(8deg) translateY(-10px) scale(1.02); }
+  100% { transform: rotate(-6deg) translateY(-2px) scale(0.99); }
+}
+
+/* 竹筒內的靈籤束 */
+.bamboo-slips-bundle {
+  position: absolute;
+  top: -55px;
+  width: 110px;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+}
+.bamboo-slip {
+  position: absolute;
+  width: 9px;
+  height: 125px;
+  background: linear-gradient(180deg, #d4af37 0%, #a67c1e 40%, #5c4212 100%);
+  border-radius: 4px 4px 0 0;
+  box-shadow: 1px 1px 4px rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+.slip-tip {
+  color: var(--red);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+}
+.s1 { left: 10px; transform: rotate(-14deg); }
+.s2 { left: 24px; transform: rotate(-8deg); }
+.s3 { left: 38px; transform: rotate(-3deg); }
+.s4 { left: 52px; transform: rotate(2deg); }
+.s5 { left: 66px; transform: rotate(7deg); }
+.s6 { left: 80px; transform: rotate(12deg); }
+.s7 { left: 94px; transform: rotate(17deg); }
 
 .temple-pot-seal {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 36px;
-  aspect-ratio: 1;
+  width: 44px;
+  height: 44px;
   background: var(--red);
   border: 1px solid var(--gold);
   color: #fff;
-  font: 700 18px/1 'Noto Serif TC', serif;
+  border-radius: 4px;
   display: grid;
   place-items: center;
-  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
 }
+.seal-character {
+  font: 700 13px/1.2 'Noto Serif TC', serif;
+  writing-mode: vertical-rl;
+  letter-spacing: .1em;
+}
+
+/* 躍出浮空之金光靈籤 */
+.rising-sacred-stick {
+  position: absolute;
+  z-index: 10;
+  top: 20px;
+  width: 44px;
+  height: 180px;
+  background: linear-gradient(180deg, #fff3cc 0%, #d4af37 40%, #8a6435 100%);
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.9), 0 10px 25px rgba(0,0,0,0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  opacity: 0;
+  transform: translateY(60px) scale(0.6);
+  pointer-events: none;
+  transition: all .6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.rising-sacred-stick.active {
+  opacity: 1;
+  transform: translateY(-80px) scale(1.15);
+  animation: stickHovering 2s infinite alternate ease-in-out 1.2s;
+}
+@keyframes stickHovering {
+  0% { transform: translateY(-80px) scale(1.15) rotate(-2deg); }
+  100% { transform: translateY(-90px) scale(1.18) rotate(2deg); }
+}
+.stick-head {
+  padding: 2px 6px;
+  background: var(--red);
+  color: #fff;
+  font: 700 11px/1 'Noto Serif TC', serif;
+  border-radius: 2px;
+}
+.stick-body {
+  color: #2e1a0c;
+  font: 700 14px/1.3 'Noto Serif TC', serif;
+  writing-mode: vertical-rl;
+  letter-spacing: .15em;
+}
+
+/* 擲筊（聖筊）降臨 */
+.divine-poe-pair {
+  position: absolute;
+  z-index: 11;
+  bottom: 35px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(20px) scale(0.7);
+  pointer-events: none;
+  transition: all .5s ease-out;
+}
+.divine-poe-pair.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.poe-block {
+  width: 38px;
+  height: 20px;
+  background: linear-gradient(180deg, #a42c24 0%, #5e1410 100%);
+  border: 1px solid var(--gold);
+  border-radius: 20px 20px 4px 4px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+.poe-left { transform: rotate(-25deg); }
+.poe-right { transform: rotate(155deg); }
+.poe-face {
+  color: var(--gold-soft);
+  font: 700 10px/1 'Noto Serif TC', serif;
+}
+.poe-blessing-tag {
+  background: rgba(36, 23, 16, 0.9);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font: 600 11px/1 'Noto Serif TC', serif;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* 紅木案桌底座 */
 .temple-altar-base {
-  width: 280px;
-  height: 8px;
-  background: var(--gold);
+  position: relative;
+  z-index: 4;
+  width: 360px;
+  height: 14px;
+  background: linear-gradient(180deg, #5a3d28 0%, #2b180d 100%);
+  border: 1px solid var(--gold);
   border-radius: 4px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.8);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.9);
+}
+.table-border-gold {
+  position: absolute;
+  top: 2px;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: var(--gold);
+  opacity: .7;
 }
 
 .temple-draw-action {

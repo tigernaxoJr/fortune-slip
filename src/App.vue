@@ -348,45 +348,104 @@ async function askAi() {
           <p class="eyebrow center-eyebrow temple-eyebrow"><span></span> 步驟 參 ・ 神龕求靈籤</p>
           <h1>一念既誠<br><em>聖意降臨</em></h1>
           <p class="hero-lead center-lead temple-lead">
-            默念稟告之事：「{{ question.trim() }}」，誠心搖動竹籤筒求取靈籤。
+            {{ question.trim() ? `默念稟告之事：「${question.trim()}」，誠心搖動竹籤筒求取靈籤。` : '屏息靜氣、定心凝神，搖動竹籤筒求取聖意靈籤。' }}
           </p>
         </div>
 
-        <!-- 佛龕主祭壇 -->
+        <!-- 儀式進行中階段指示器 -->
+        <div class="ritual-progress-bar temple-ritual-progress" :class="{ active: isDrawing }">
+          <div class="progress-step" :class="{ active: isDrawing }">
+            <span class="step-icon">🧧</span>
+            <span>淨手焚香</span>
+          </div>
+          <span class="progress-arrow">➔</span>
+          <div class="progress-step" :class="{ active: isDrawing }">
+            <span class="step-icon">🎍</span>
+            <span>搖動竹筒</span>
+          </div>
+          <span class="progress-arrow">➔</span>
+          <div class="progress-step" :class="{ active: isDrawing }">
+            <span class="step-icon">✨</span>
+            <span>靈籤躍出</span>
+          </div>
+          <span class="progress-arrow">➔</span>
+          <div class="progress-step" :class="{ active: isDrawing }">
+            <span class="step-icon">☯️</span>
+            <span>聖筊應驗</span>
+          </div>
+        </div>
+
+        <!-- 道教神座主祭壇 -->
         <div class="hero-art ritual-altar temple-shrine-altar" aria-hidden="true">
-          <!-- 蓮花對燈 -->
-          <div class="lotus-lamp lamp-left">
-            <div class="flame"></div>
-            <div class="lotus-base">✿</div>
-          </div>
-          <div class="lotus-lamp lamp-right">
-            <div class="flame"></div>
-            <div class="lotus-base">✿</div>
-          </div>
-
-          <!-- 佛光日輪 -->
-          <div class="sun-disc temple-sun-disc" :class="{ glowing: isDrawing }">
-            <span class="buddha-mark">佛</span>
+          <!-- 背景太極八卦金光神輪 -->
+          <div class="taoist-bagua-halo" :class="{ glowing: isDrawing }">
+            <div class="bagua-ring outer-trigrams">
+              <span>乾</span><span>兌</span><span>離</span><span>震</span>
+              <span>巽</span><span>坎</span><span>艮</span><span>坤</span>
+            </div>
+            <div class="bagua-ring inner-circle"></div>
+            <div class="taiji-center-mark">☯</div>
           </div>
 
-          <!-- 宣德爐香煙 -->
-          <div class="incense incense-one"></div>
-          <div class="incense incense-two"></div>
-          <div class="incense incense-three"></div>
-
-          <!-- 竹編籤筒 -->
-          <div class="oracle-pot temple-oracle-pot" :class="{ shaking: isDrawing }">
-            <i class="stick s1"></i><i class="stick s2"></i><i class="stick s3"></i>
-            <i class="stick s4"></i><i class="stick s5"></i><i class="stick s6"></i>
-            <div class="pot-mark temple-pot-seal">聖</div>
+          <!-- 三足宣德古銅香爐與紫氣祥雲青煙 -->
+          <div class="bronze-incense-burner">
+            <div class="burner-body">
+              <span class="burner-seal">鼎</span>
+            </div>
+            <div class="smoke-particles">
+              <div class="incense incense-one"></div>
+              <div class="incense incense-two"></div>
+              <div class="incense incense-three"></div>
+            </div>
           </div>
-          <div class="altar-line temple-altar-base"></div>
+
+          <!-- 古風道教竹籤筒 -->
+          <div class="oracle-bamboo-cylinder temple-bamboo-cylinder" :class="{ shaking: isDrawing }">
+            <div class="cylinder-band top-band"></div>
+            <div class="cylinder-band mid-band"></div>
+            <div class="cylinder-band bot-band"></div>
+
+            <!-- 竹筒內的諸靈籤 -->
+            <div class="bamboo-slips-bundle">
+              <div class="bamboo-slip s1"><span class="slip-tip">朱</span></div>
+              <div class="bamboo-slip s2"><span class="slip-tip">朱</span></div>
+              <div class="bamboo-slip s3"><span class="slip-tip">朱</span></div>
+              <div class="bamboo-slip s4"><span class="slip-tip">朱</span></div>
+              <div class="bamboo-slip s5"><span class="slip-tip">朱</span></div>
+              <div class="bamboo-slip s6"><span class="slip-tip">朱</span></div>
+              <div class="bamboo-slip s7"><span class="slip-tip">朱</span></div>
+            </div>
+
+            <div class="pot-mark temple-pot-seal">
+              <span class="seal-character">聖籤感應</span>
+            </div>
+          </div>
+
+          <!-- 躍出浮空的金光靈籤 (搖籤時動畫觸發) -->
+          <div class="rising-sacred-stick" :class="{ active: isDrawing }">
+            <div class="stick-head">第一籤</div>
+            <div class="stick-body">聖意開示</div>
+            <div class="stick-glow"></div>
+          </div>
+
+          <!-- 擲筊（聖筊）降臨動畫 -->
+          <div class="divine-poe-pair" :class="{ active: isDrawing }">
+            <div class="poe-block poe-left">
+              <span class="poe-face flat">陽</span>
+            </div>
+            <div class="poe-block poe-right">
+              <span class="poe-face convex">陰</span>
+            </div>
+            <div class="poe-blessing-tag">✦ 聖筊應驗・賜予吉籤 ✦</div>
+          </div>
+
+          <!-- 紫檀金邊神案桌底座 -->
+          <div class="altar-table-surface temple-altar-base">
+            <div class="table-border-gold"></div>
+          </div>
         </div>
 
         <div class="draw-action temple-draw-action">
-          <div class="ritual-line temple-ritual-line">
-            <span>淨手焚香</span><i></i><span>誠心默念</span><i></i><span>搖籤求聖意</span>
-          </div>
           <button
             class="draw-button temple-draw-btn"
             type="button"
@@ -394,9 +453,9 @@ async function askAi() {
             :aria-busy="isDrawing"
             @click="performRitualAndDraw"
           >
-            <span v-if="isDrawing" class="shaking-mark temple-shaking-seal">聖</span>
+            <span v-if="isDrawing" class="shaking-mark temple-shaking-seal">卍</span>
             <span v-else class="button-seal temple-button-seal">籤</span>
-            {{ isDrawing ? '諸佛感應・靈籤落定中…' : '誠心搖籤・求取聖意' }}
+            {{ isDrawing ? '諸佛感應・靈籤擲筊中…' : '誠心搖籤・求取聖意' }}
           </button>
           <p v-if="notice" class="notice temple-notice" role="alert">{{ notice }}</p>
         </div>
