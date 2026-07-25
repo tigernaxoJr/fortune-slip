@@ -12,7 +12,7 @@
   --gold-soft: #f0cf74;
   --line: rgba(212, 175, 55, 0.22);
   --line-dark: rgba(164, 44, 36, 0.35);
-  font-family: 'Outfit', 'Noto Serif TC', serif;
+  font-family: 'Noto Serif TC', serif;
   color: var(--ink);
   background: #0d0705;
   font-synthesis: none;

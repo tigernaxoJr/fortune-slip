@@ -371,7 +371,7 @@ async function askAi() {
       <!-- 步驟 肆：黃絹聖籤解與 AI 佛意靈析 -->
       <section v-else-if="currentStep === 4 && result" ref="resultSection" class="step-view step-four result-section temple-result-section">
         <div class="result-heading temple-result-heading">
-          <p class="kicker temple-kicker">SACRED ORACLE</p>
+          <p class="kicker temple-kicker">感應聖籤・諸佛靈應</p>
           <div class="heading-main-row">
             <h2>感應所得之聖籤</h2>
             <button type="button" class="temple-reset-btn" @click="resetRitual">
@@ -452,7 +452,7 @@ async function askAi() {
 
           <!-- 右側 AI 佛意靈析面板 -->
           <aside class="reading-panel temple-reading-panel">
-            <p class="panel-label temple-panel-label">YOUR PRAYER SCRIPTURE</p>
+            <p class="panel-label temple-panel-label">信士所稟疏文</p>
             <blockquote class="temple-blockquote">「{{ question.trim() }}」</blockquote>
             <div class="divider temple-divider"><span>開示</span></div>
 
@@ -505,18 +505,18 @@ async function askAi() {
       <form method="dialog" @submit.prevent="saveSettings">
         <div class="dialog-head">
           <div>
-            <p class="kicker temple-kicker">OPENAI-COMPATIBLE API</p>
+            <p class="kicker temple-kicker">AI 靈析介面設定</p>
             <h2>AI 靈析開示設定</h2>
           </div>
           <button type="button" aria-label="關閉設定" @click="settingsDialog?.close()">×</button>
         </div>
         <p class="dialog-copy">
-          支援 OpenAI 相容的 <code>/chat/completions</code> API。
+          支援 OpenAI 相容協定之 <code>/chat/completions</code> 介面。
           金鑰只保留在此分頁記憶中，關閉分頁後即自動清除。
         </p>
 
         <div class="preset-section">
-          <span class="field-title">選擇服務商預設 (CSP)</span>
+          <span class="field-title">選擇 AI 服務商預設</span>
           <div class="preset-chips">
             <button
               v-for="preset in defaultCspPresets"
@@ -529,7 +529,7 @@ async function askAi() {
               {{ preset.name }}
             </button>
             <span class="preset-chip disabled" :class="{ active: selectedPresetId === 'custom' }">
-              自訂 Base URL
+              自訂網址
             </span>
           </div>
         </div>
@@ -543,11 +543,11 @@ async function askAi() {
         </div>
 
         <label>
-          <span>API Key</span>
+          <span>API 金鑰 (API Key)</span>
           <input v-model="apiKey" type="password" autocomplete="off" :placeholder="selectedPresetId === 'google' ? 'AIzaSy…' : 'sk-…'" required>
         </label>
         <label>
-          <span>Base URL</span>
+          <span>伺服器網址 (Base URL)</span>
           <input v-model="baseUrl" type="url" inputmode="url" placeholder="https://api.openai.com/v1" required>
         </label>
 
