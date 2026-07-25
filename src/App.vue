@@ -361,9 +361,9 @@ async function askAi() {
                   :key="idx"
                   class="story-card"
                 >
-                  <h4 v-if="story.title" class="story-title">
+                  <h4 class="story-title">
                     <span class="story-index">典故 {{ idx + 1 }}</span>
-                    {{ story.title }}
+                    {{ story.title || '典故說明' }}
                   </h4>
                   <div v-if="story.content.length" class="story-body">
                     <p v-for="(line, lIdx) in story.content" :key="lIdx">{{ line }}</p>

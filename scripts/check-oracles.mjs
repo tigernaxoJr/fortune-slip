@@ -24,6 +24,13 @@ assert.equal(formatted.length, 1)
 assert.equal(formatted[0].title, '韓文公過秦嶺湘子掃霜雪')
 assert.equal(formatted[0].content.length, 2)
 
+// Check unnumbered title detection (e.g. 周玉姊可遇陳春生 followed by 2.姜子牙...)
+const unnumberedStoriesTest = ['周玉姊可遇陳春生', '2.姜子牙送飯為武吉掩卦']
+const formattedUnnumbered = formatStories(unnumberedStoriesTest)
+assert.equal(formattedUnnumbered.length, 2)
+assert.equal(formattedUnnumbered[0].title, '周玉姊可遇陳春生')
+assert.equal(formattedUnnumbered[1].title, '姜子牙送飯為武吉掩卦')
+
 // Check empty story title filtering (e.g. 一、, 二、, 三、, 四、 without content)
 const emptyStoriesTest = [
   '1.李存孝打虎',
@@ -59,4 +66,4 @@ for (const [id, count] of Object.entries(expected)) {
 }
 
 assert.equal(Object.values(data).flat().length, 520)
-console.log('oracle data: 6 decks, 520 verses, CSP presets & empty story filtering verified successfully')
+console.log('oracle data: 6 decks, 520 verses, unnumbered story titles & empty filtering verified successfully')

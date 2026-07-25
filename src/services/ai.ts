@@ -58,6 +58,28 @@ const sanitizeEndpoint = (baseUrl: string) => {
   return endpoint.href
 }
 
+function createOpenAIClient(apiKey: string, baseUrl: string) {
+  const targetBase = sanitizeEndpoint(baseUrl)
+  const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV && typeof window !== 'undefined'
+
+  if (isDev) {
+    return new OpenAI({
+      apiKey: apiKey.trim(),
+      baseURL: `${window.location.origin}/api-proxy`,
+      dangerouslyAllowBrowser: true,
+      defaultHeaders: {
+        'x-target-url': targetBase,
+      },
+    })
+  }
+
+  return new OpenAI({
+    apiKey: apiKey.trim(),
+    baseURL: targetBase,
+    dangerouslyAllowBrowser: true,
+  })
+}
+
 export function removeThoughtTags(text: string): string {
   if (!text) return ''
   return text
@@ -76,22 +98,27 @@ export function formatStories(stories?: readonly string[]): FormattedStory[] {
     const trimmed = item.trim()
     if (!trimmed) continue
 
-    const isTitle = /^(?:\([\d一二三四五六七八九十]+\)|\d+\.|[一二三四五六七八九十]+[、.])/ .test(trimmed)
+    const hasNumPrefix = /^(?:\([\d一二三四五六七八九十]+\)|\d+\.|[一二三四五六七八九十]+[、.])/ .test(trimmed)
 
-    if (isTitle) {
+    if (hasNumPrefix) {
       const cleanTitle = trimmed
         .replace(/^(?:\([\d一二三四五六七八九十]+\)|\d+\.|[一二三四五六七八九十]+[、.])/ , '')
         .replace(/[：:]$/, '')
         .trim()
-      currentStory = { title: cleanTitle, content: [] }
-      rawList.push(currentStory)
-    } else {
-      if (!currentStory) {
-        currentStory = { title: '典故說明', content: [] }
+      if (cleanTitle) {
+        currentStory = { title: cleanTitle, content: [] }
         rawList.push(currentStory)
       }
-      if (!/^\d+\.?$/.test(trimmed)) {
-        currentStory.content.push(trimmed)
+    } else {
+      const looksLikeTitle = trimmed.length <= 30 && !/[。；;！!]$/.test(trimmed)
+
+      if (!currentStory || (looksLikeTitle && currentStory.content.length > 0)) {
+        currentStory = { title: trimmed, content: [] }
+        rawList.push(currentStory)
+      } else {
+        if (!/^\d+\.?$/.test(trimmed)) {
+          currentStory.content.push(trimmed)
+        }
       }
     }
   }
@@ -107,13 +134,8 @@ export function formatStories(stories?: readonly string[]): FormattedStory[] {
 
 export async function fetchModels(settings: { apiKey: string; baseUrl: string }): Promise<string[]> {
   if (!settings.apiKey.trim()) throw new Error('請填寫 API Key 後再讀取模型列表')
-  const baseURL = sanitizeEndpoint(settings.baseUrl)
 
-  const openai = new OpenAI({
-    apiKey: settings.apiKey.trim(),
-    baseURL,
-    dangerouslyAllowBrowser: true,
-  })
+  const openai = createOpenAIClient(settings.apiKey, settings.baseUrl)
 
   try {
     const list = await openai.models.list()
@@ -144,13 +166,7 @@ export async function interpretOracle(
   if (!settings.apiKey.trim()) throw new Error('請先設定 API Key')
   if (!settings.model.trim()) throw new Error('請填寫模型名稱')
 
-  const baseURL = sanitizeEndpoint(settings.baseUrl)
-
-  const openai = new OpenAI({
-    apiKey: settings.apiKey.trim(),
-    baseURL,
-    dangerouslyAllowBrowser: true,
-  })
+  const openai = createOpenAIClient(settings.apiKey, settings.baseUrl)
 
   const storiesText = verse.stories?.length ? `\n籤詩故事：\n${verse.stories.join('\n')}` : ''
   const attrText = verse.attributes && Object.keys(verse.attributes).length
