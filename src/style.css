@@ -881,23 +881,190 @@ a { color: inherit; }
 
 /* API 設定彈窗 */
 .temple-dialog {
+  width: min(90vw, 560px);
+  margin: auto;
   padding: 0;
   border: 1px solid var(--gold);
-  color: var(--ink);
-  background: #18100c;
-  box-shadow: 0 35px 110px rgba(0,0,0,0.85);
-  border-radius: 6px;
+  color: var(--gold-soft);
+  background: linear-gradient(145deg, #1d120c, #130b07);
+  box-shadow: 0 30px 100px rgba(0,0,0,0.9), 0 0 25px rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
 }
-.temple-dialog::backdrop { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); }
-.temple-dialog form { padding: 36px 40px 40px; color: var(--gold-soft); }
-.temple-dialog input, .temple-dialog select {
-  background: rgba(15, 9, 6, 0.9);
-  border: 1px solid var(--line);
+.temple-dialog::backdrop {
+  background: rgba(10, 5, 3, 0.85);
+  backdrop-filter: blur(8px);
+}
+.temple-dialog form {
+  padding: 36px 36px 40px;
+}
+.dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.dialog-head h2 {
+  margin: 6px 0 0;
+  font: 700 26px/1.2 'Noto Serif TC', serif;
   color: #fff;
+  letter-spacing: .08em;
+}
+.dialog-head button {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 28px;
+  font-weight: 300;
+  cursor: pointer;
+  line-height: 1;
+  transition: color .2s;
+}
+.dialog-head button:hover {
+  color: #fff;
+}
+.dialog-copy {
+  margin: 16px 0 22px;
+  color: var(--muted);
+  font: 400 13px/1.7 'Noto Serif TC', serif;
+}
+.dialog-copy code {
+  padding: 2px 6px;
+  background: rgba(164, 44, 36, 0.25);
+  color: var(--gold-soft);
+  font-family: monospace;
+  border-radius: 3px;
+}
+
+.preset-section {
+  margin-top: 20px;
+}
+.field-title {
+  display: block;
+  margin-bottom: 10px;
+  font: 600 12px/1 'Noto Serif TC', serif;
+  letter-spacing: .05em;
+  color: var(--gold-soft);
+}
+.preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.preset-chip {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  background: rgba(36, 23, 16, 0.8);
+  color: var(--gold-soft);
+  font: 500 12px/1 'Noto Serif TC', serif;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all .2s;
+}
+.preset-chip:hover {
+  border-color: var(--gold);
+  background: rgba(164, 44, 36, 0.25);
+}
+.preset-chip.active {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, #a42c24, #7a1d17);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+.preset-chip.disabled {
+  cursor: default;
+  opacity: .7;
+  border-style: dashed;
+}
+.preset-chip.disabled.active {
+  background: rgba(100, 70, 50, 0.6);
+  border-color: rgba(150, 100, 70, 0.8);
+}
+
+.temple-dialog label {
+  display: block;
+  margin-top: 18px;
+}
+.temple-dialog label span {
+  display: block;
+  margin-bottom: 7px;
+  font: 600 12px/1 'Noto Serif TC', serif;
+  letter-spacing: .05em;
+  color: var(--gold-soft);
+}
+.temple-dialog input, .temple-dialog select {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  background: rgba(12, 7, 5, 0.9);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  outline: 0;
+  font: 500 13px/1 'Noto Serif TC', serif;
+  color: #fff;
+  transition: all .25s ease;
 }
 .temple-dialog input:focus, .temple-dialog select:focus {
   border-color: var(--gold);
   box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
+}
+
+.model-group {
+  margin-top: 18px;
+}
+.model-label {
+  display: block;
+}
+.model-label-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 7px;
+}
+.model-label-head span {
+  margin-bottom: 0 !important;
+}
+.fetch-models-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--gold);
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--gold-soft);
+  font: 600 11px/1 'Noto Serif TC', serif;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all .2s;
+}
+.fetch-models-btn:hover:not(:disabled) {
+  background: var(--gold);
+  color: #120b08;
+}
+.fetch-models-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.model-status {
+  margin: 8px 0 0;
+  color: var(--gold-soft);
+  font: 500 11px/1.4 'Noto Serif TC', serif;
+}
+.model-status.error {
+  color: #ff6b6b;
+}
+
+.security-note {
+  margin: 20px 0 24px;
+  color: var(--muted);
+  font: 400 11px/1.5 'Noto Serif TC', serif;
+}
+.security-note span {
+  color: var(--gold);
+}
+
+.save-button {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 8px;
 }
 
 /* 響應式調整 */
