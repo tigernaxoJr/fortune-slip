@@ -509,9 +509,22 @@ async function askAi() {
           </div>
         </div>
 
+        <div v-if="selectedPresetId === 'google'" class="free-key-callout">
+          <span class="callout-icon">🎁</span>
+          <div class="callout-text">
+            <strong>Google Gemini 免費 API Key 說明：</strong>
+            <p>Google 提供免費額度的 API 金鑰！您可以直接前往 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" class="free-link">Google AI Studio ↗</a> 登入並免費建立金鑰即可使用。</p>
+          </div>
+        </div>
+
         <label>
-          <span>API Key</span>
-          <input v-model="apiKey" type="password" autocomplete="off" placeholder="sk-…" required>
+          <div class="field-label-head">
+            <span>API Key</span>
+            <a v-if="selectedPresetId === 'google'" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" class="free-key-link">
+              免費申請 Gemini API Key ↗
+            </a>
+          </div>
+          <input v-model="apiKey" type="password" autocomplete="off" :placeholder="selectedPresetId === 'google' ? 'AIzaSy…' : 'sk-…'" required>
         </label>
         <label>
           <span>Base URL</span>
@@ -541,7 +554,13 @@ async function askAi() {
           </p>
         </div>
 
-        <p class="security-note"><span>●</span> 遠端服務僅允許 HTTPS，避免金鑰在傳輸途中外洩。</p>
+        <div class="security-privacy-banner">
+          <span class="security-shield-icon">🛡️</span>
+          <div class="security-privacy-text">
+            <strong>金鑰安全保管聲明：</strong>
+            <p>API Key <strong>僅存放在目前分頁記憶體</strong>中，絕不儲存於硬碟或發送至第三方伺服器。<strong>關閉或重新整理網頁後即自動抹除消失</strong>，請妥善保管您的金鑰。</p>
+          </div>
+        </div>
         <button class="save-button temple-btn-primary" type="submit">儲存並返回求籤</button>
       </form>
     </dialog>
