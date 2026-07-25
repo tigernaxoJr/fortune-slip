@@ -135,6 +135,25 @@ export function formatStories(stories?: readonly string[]): FormattedStory[] {
 export async function fetchModels(settings: { apiKey: string; baseUrl: string }): Promise<string[]> {
   if (!settings.apiKey.trim()) throw new Error('請填寫 API Key 後再讀取模型列表')
 
+  // Native CORS fallback for Google Gemini API on GitHub Pages / production hosts
+  if (settings.baseUrl.includes('generativelanguage.googleapis.com')) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${settings.apiKey.trim()}`)
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data.models)) {
+          const models = data.models
+            .map((m: any) => m.name || m.id)
+            .filter((id: string): id is string => typeof id === 'string' && id.length > 0)
+            .sort((a: string, b: string) => a.localeCompare(b))
+          if (models.length > 0) return models
+        }
+      }
+    } catch {
+      // Fallback to OpenAI SDK method below
+    }
+  }
+
   const openai = createOpenAIClient(settings.apiKey, settings.baseUrl)
 
   try {
@@ -151,7 +170,7 @@ export async function fetchModels(settings: { apiKey: string; baseUrl: string })
   } catch (error) {
     if (error instanceof Error && error.message) {
       if (error.name === 'APIConnectionError' || error.message.includes('fetch')) {
-        throw new Error('無法連線至模型列表 Endpoint；請確認網址、API Key 與跨網域 (CORS) 設定')
+        throw new Error('跨網域 (CORS) 限制：Google OpenAI 相容端點在瀏覽器端發起請求時會被 CORS 阻擋。請使用預載選單中的熱門模型，即可直接連線。')
       }
       throw error
     }
@@ -168,8 +187,6 @@ export async function interpretOracle(
   if (!settings.apiKey.trim()) throw new Error('請先設定 API Key')
   if (!settings.model.trim()) throw new Error('請填寫模型名稱')
 
-  const openai = createOpenAIClient(settings.apiKey, settings.baseUrl)
-
   const storiesText = verse.stories?.length ? `\n籤詩故事：\n${verse.stories.join('\n')}` : ''
   const attrText = verse.attributes && Object.keys(verse.attributes).length
     ? `\n籤詩屬性：\n${Object.entries(verse.attributes).map(([k, v]) => `${k}：${v}`).join('；')}`
@@ -177,6 +194,44 @@ export async function interpretOracle(
   const expText = verse.explanations?.length ? `\n傳統解說明：\n${verse.explanations.join('\n')}` : ''
 
   const userContent = `所問之事：${question.trim()}\n籤庫：${deck.name}\n籤號：第 ${verse.number} 籤${verse.fortune ? `（${verse.fortune}）` : ''}${verse.ganzhi ? ` 【${verse.ganzhi}】` : ''}${verse.element ? ` ${verse.element}` : ''}\n籤詩：\n${verse.lines.join('\n')}${storiesText}${attrText}${expText}`
+
+  // Native CORS-friendly Google Gemini REST API fallback for GitHub Pages
+  if (settings.baseUrl.includes('generativelanguage.googleapis.com')) {
+    try {
+      const modelName = settings.model.trim()
+      const formattedModelPath = modelName.startsWith('models/') ? modelName : `models/${modelName}`
+      const googleNativeUrl = `https://generativelanguage.googleapis.com/v1beta/${formattedModelPath}:generateContent?key=${settings.apiKey.trim()}`
+
+      const res = await fetch(googleNativeUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `${systemPrompt}\n\n${userContent}` }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.55,
+          },
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (typeof candidateText === 'string' && candidateText.length > 0) {
+          const cleaned = removeThoughtTags(candidateText)
+          if (cleaned) return cleaned
+        }
+      }
+    } catch {
+      // Fallback to OpenAI SDK
+    }
+  }
+
+  const openai = createOpenAIClient(settings.apiKey, settings.baseUrl)
 
   try {
     const completion = await openai.chat.completions.create({
