@@ -1059,6 +1059,11 @@ a { color: inherit; }
   border-color: var(--gold);
   box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
 }
+.temple-dialog select option {
+  background: #18100c;
+  color: #fff;
+  padding: 8px;
+}
 
 .model-group {
   margin-top: 18px;

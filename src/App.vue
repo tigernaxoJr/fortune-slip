@@ -38,6 +38,19 @@ const selectedPresetId = computed(() => {
   return match ? match.id : 'custom'
 })
 
+const presetModelsMap: Record<string, string[]> = {
+  openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo', 'o1-mini', 'o3-mini'],
+  google: ['models/gemma-4-31b-it', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+  deepseek: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner'],
+}
+
+const availableModels = computed(() => {
+  if (fetchedModels.value.length > 0) {
+    return fetchedModels.value
+  }
+  return presetModelsMap[selectedPresetId.value] || []
+})
+
 function chooseDeck(id: DeckId) {
   selectedId.value = id
   result.value = null
@@ -116,8 +129,17 @@ async function loadModels() {
   try {
     const list = await fetchModels({ apiKey: apiKey.value, baseUrl: baseUrl.value })
     fetchedModels.value = list
-    if (list.length > 0 && !list.includes(model.value)) {
-      model.value = list[0]
+    if (list.length > 0) {
+      if (selectedPresetId.value === 'google') {
+        const preferredGemma = list.find((m) => m === 'models/gemma-4-31b-it' || m === 'gemma-4-31b-it')
+        if (preferredGemma) {
+          model.value = preferredGemma
+        } else if (!list.includes(model.value)) {
+          model.value = list[0]
+        }
+      } else if (!list.includes(model.value)) {
+        model.value = list[0]
+      }
     }
     modelNotice.value = `已成功讀取 ${list.length} 個可用模型`
   } catch (err) {
@@ -539,8 +561,8 @@ async function askAi() {
                 {{ isFetchingModels ? '讀取中…' : '讀取模型列表 ↻' }}
               </button>
             </div>
-            <select v-if="fetchedModels.length" v-model="model" required class="model-select">
-              <option v-for="m in fetchedModels" :key="m" :value="m">{{ m }}</option>
+            <select v-if="availableModels.length" v-model="model" required class="model-select">
+              <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
             </select>
             <input v-else v-model="model" type="text" placeholder="gpt-4o-mini / gemini-2.5-flash / deepseek-chat" required>
           </label>

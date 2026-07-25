@@ -138,11 +138,13 @@ export async function fetchModels(settings: { apiKey: string; baseUrl: string })
   const openai = createOpenAIClient(settings.apiKey, settings.baseUrl)
 
   try {
-    const list = await openai.models.list()
-    const models = list.data
-      .map((item) => item.id)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0)
-      .sort((a, b) => a.localeCompare(b))
+    const response: any = await openai.models.list()
+    const rawArray = Array.isArray(response?.data) ? response.data : Array.isArray(response) ? response : []
+
+    const models = rawArray
+      .map((item: any) => (typeof item === 'string' ? item : item?.id || item?.name || ''))
+      .filter((id: string): id is string => typeof id === 'string' && id.length > 0)
+      .sort((a: string, b: string) => a.localeCompare(b))
 
     if (!models.length) throw new Error('伺服器未回傳可用的模型列表')
     return models
