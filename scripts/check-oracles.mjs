@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { defaultCspPresets, fetchModels, removeThoughtTags } from '../src/services/ai.ts'
+import { defaultCspPresets, fetchModels, formatStories, removeThoughtTags } from '../src/services/ai.ts'
 
 // Check CSP Presets
 assert(Array.isArray(defaultCspPresets) && defaultCspPresets.length >= 3, 'CSP presets missing')
@@ -12,6 +12,31 @@ assert.equal(googlePreset.baseUrl, 'https://generativelanguage.googleapis.com/v1
 assert.equal(removeThoughtTags('<thought>thinking process...</thought>Final Answer'), 'Final Answer')
 assert.equal(removeThoughtTags('<think>some reasoning\nsecond line</think>\n\n解籤內容'), '解籤內容')
 assert.equal(removeThoughtTags('<thought>unclosed thinking'), '')
+
+// Check formatStories logic
+const rawStories = [
+  '(一)韓文公過秦嶺湘子掃霜雪',
+  '韓愈。字退之。昌黎人。唐德宗貞元八年進士。諡文公。',
+  '因諫迎佛骨。獨怒天子。貶至潮州刺史。',
+]
+const formatted = formatStories(rawStories)
+assert.equal(formatted.length, 1)
+assert.equal(formatted[0].title, '韓文公過秦嶺湘子掃霜雪')
+assert.equal(formatted[0].content.length, 2)
+
+// Check empty story title filtering (e.g. 一、, 二、, 三、, 四、 without content)
+const emptyStoriesTest = [
+  '1.李存孝打虎',
+  '2.石存孝遇李克用收為誼子',
+  '一、',
+  '二、',
+  '三、',
+  '四、',
+]
+const formattedEmpty = formatStories(emptyStoriesTest)
+assert.equal(formattedEmpty.length, 2)
+assert.equal(formattedEmpty[0].title, '李存孝打虎')
+assert.equal(formattedEmpty[1].title, '石存孝遇李克用收為誼子')
 
 // Check fetchModels export
 assert.equal(typeof fetchModels, 'function')
@@ -34,4 +59,4 @@ for (const [id, count] of Object.entries(expected)) {
 }
 
 assert.equal(Object.values(data).flat().length, 520)
-console.log('oracle data: 6 decks, 520 verses, CSP presets & thought-stripping verified successfully')
+console.log('oracle data: 6 decks, 520 verses, CSP presets & empty story filtering verified successfully')

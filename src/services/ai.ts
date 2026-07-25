@@ -14,6 +14,11 @@ export interface CspPreset {
   defaultModel: string
 }
 
+export interface FormattedStory {
+  title: string
+  content: string[]
+}
+
 export const defaultCspPresets: readonly CspPreset[] = [
   {
     id: 'openai',
@@ -59,6 +64,45 @@ export function removeThoughtTags(text: string): string {
     .replace(/<(?:thought|think)[\s\S]*?<\/(?:thought|think)>/gi, '')
     .replace(/<(?:thought|think)[\s\S]*/gi, '')
     .trim()
+}
+
+export function formatStories(stories?: readonly string[]): FormattedStory[] {
+  if (!stories || !stories.length) return []
+
+  const rawList: FormattedStory[] = []
+  let currentStory: FormattedStory | null = null
+
+  for (const item of stories) {
+    const trimmed = item.trim()
+    if (!trimmed) continue
+
+    const isTitle = /^(?:\([\d一二三四五六七八九十]+\)|\d+\.|[一二三四五六七八九十]+[、.])/ .test(trimmed)
+
+    if (isTitle) {
+      const cleanTitle = trimmed
+        .replace(/^(?:\([\d一二三四五六七八九十]+\)|\d+\.|[一二三四五六七八九十]+[、.])/ , '')
+        .replace(/[：:]$/, '')
+        .trim()
+      currentStory = { title: cleanTitle, content: [] }
+      rawList.push(currentStory)
+    } else {
+      if (!currentStory) {
+        currentStory = { title: '典故說明', content: [] }
+        rawList.push(currentStory)
+      }
+      if (!/^\d+\.?$/.test(trimmed)) {
+        currentStory.content.push(trimmed)
+      }
+    }
+  }
+
+  const singleNumberPattern = /^[\d一二三四五六七八九十?]+$/
+  return rawList.filter((s) => {
+    const cleanTitle = s.title.trim()
+    const hasMeaningfulTitle = cleanTitle.length > 0 && !singleNumberPattern.test(cleanTitle)
+    const hasContent = s.content.some((c) => c.trim().length > 0)
+    return hasMeaningfulTitle || hasContent
+  })
 }
 
 export async function fetchModels(settings: { apiKey: string; baseUrl: string }): Promise<string[]> {

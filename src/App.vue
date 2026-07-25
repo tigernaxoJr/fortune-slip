@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
 import { deckById, decks, drawFrom, type DeckId, type OracleVerse } from './data/decks'
-import { defaultCspPresets, fetchModels, interpretOracle, type CspPreset } from './services/ai'
+import { defaultCspPresets, fetchModels, formatStories, interpretOracle, type CspPreset } from './services/ai'
 
+const currentStep = ref<1 | 2 | 3 | 4>(1)
 const selectedId = ref<DeckId>('jiazi')
 const question = ref('')
 const result = ref<OracleVerse | null>(null)
@@ -21,6 +22,14 @@ const isFetchingModels = ref(false)
 const modelNotice = ref('')
 
 const selectedDeck = computed(() => deckById(selectedId.value))
+const formattedVerseStories = computed(() => formatStories(result.value?.stories))
+
+const steps = [
+  { num: 1, symbol: '壹', label: '擇籤' },
+  { num: 2, symbol: '貳', label: '祈告' },
+  { num: 3, symbol: '參', label: '搖籤' },
+  { num: 4, symbol: '肆', label: '觀籤' },
+] as const
 
 const selectedPresetId = computed(() => {
   const match = defaultCspPresets.find(
@@ -34,6 +43,60 @@ function chooseDeck(id: DeckId) {
   result.value = null
   aiAnswer.value = ''
   notice.value = ''
+}
+
+function goToStep(step: 1 | 2 | 3 | 4) {
+  if (step === 2 && !selectedId.value) return
+  if (step === 3 && question.value.trim().length < 2) {
+    notice.value = '請先在心中定下所問之事，再進行求籤。'
+    return
+  }
+  if (step === 4 && !result.value) {
+    performRitualAndDraw()
+    return
+  }
+  notice.value = ''
+  currentStep.value = step
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function nextFromStep1() {
+  goToStep(2)
+}
+
+function nextFromStep2() {
+  if (question.value.trim().length < 2) {
+    notice.value = '請先在心中定下所問之事，再進行下一步。'
+    return
+  }
+  notice.value = ''
+  goToStep(3)
+}
+
+async function performRitualAndDraw() {
+  if (question.value.trim().length < 2) {
+    notice.value = '請先在心中定下所問之事，再誠心求籤。'
+    return
+  }
+
+  notice.value = ''
+  aiAnswer.value = ''
+  result.value = null
+  isDrawing.value = true
+  await new Promise((resolve) => window.setTimeout(resolve, 1500))
+  result.value = drawFrom(selectedDeck.value)
+  isDrawing.value = false
+  currentStep.value = 4
+  await nextTick()
+  resultSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function resetRitual() {
+  result.value = null
+  aiAnswer.value = ''
+  notice.value = ''
+  currentStep.value = 1
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function applyPreset(preset: CspPreset) {
@@ -62,23 +125,6 @@ async function loadModels() {
   } finally {
     isFetchingModels.value = false
   }
-}
-
-async function drawOracle() {
-  if (question.value.trim().length < 2) {
-    notice.value = '請先在心中定下所問之事，再誠心求籤。'
-    return
-  }
-
-  notice.value = ''
-  aiAnswer.value = ''
-  result.value = null
-  isDrawing.value = true
-  await new Promise((resolve) => window.setTimeout(resolve, 720))
-  result.value = drawFrom(selectedDeck.value)
-  isDrawing.value = false
-  await nextTick()
-  resultSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 function openSettings() {
@@ -119,97 +165,91 @@ async function askAi() {
 <template>
   <div class="site-shell">
     <header class="topbar">
-      <a class="brand" href="#" aria-label="靈籤閣首頁">
+      <a class="brand" href="#" aria-label="靈籤閣首頁" @click.prevent="resetRitual">
         <span class="brand-seal">問</span>
         <span>
           <strong>靈籤閣</strong>
           <small>THE ORACLE PAVILION</small>
         </span>
       </a>
-      <nav aria-label="主要導覽">
-        <a href="#draw">誠心求籤</a>
-        <a href="#collections">六大籤庫</a>
-        <a href="#guidance">解籤須知</a>
+
+      <!-- 儀式步驟切換器 -->
+      <nav class="ritual-stepper" aria-label="求籤儀式步驟">
+        <button
+          v-for="step in steps"
+          :key="step.num"
+          type="button"
+          class="step-node"
+          :class="{
+            active: currentStep === step.num,
+            completed: currentStep > step.num,
+            disabled: (step.num === 2 && !selectedId) || (step.num >= 3 && question.trim().length < 2) || (step.num === 4 && !result)
+          }"
+          :disabled="(step.num === 2 && !selectedId) || (step.num >= 3 && question.trim().length < 2) || (step.num === 4 && !result)"
+          @click="goToStep(step.num)"
+        >
+          <span class="step-symbol">{{ step.symbol }}</span>
+          <span class="step-text">{{ step.label }}</span>
+        </button>
       </nav>
+
       <button class="settings-link" type="button" @click="openSettings">
         <span class="status-dot" :class="{ ready: apiKey }"></span>
         AI 解籤設定
       </button>
     </header>
 
-    <main>
-      <section class="hero">
+    <main class="ritual-main">
+      <!-- 步驟 壹：選擇籤庫 -->
+      <section v-if="currentStep === 1" class="step-view step-one">
         <div class="hero-copy">
-          <p class="eyebrow"><span></span> 一念既誠・萬象自明</p>
-          <h1>心有所問<br><em>籤有所示</em></h1>
+          <p class="eyebrow"><span></span> 步驟 壹 ・ 選擇籤庫</p>
+          <h1>心有所問<br><em>擇籤啟靈</em></h1>
           <p class="hero-lead">
-            收錄六套傳統籤詩，為徬徨的此刻留一盞燈。不是預言命運，
-            而是借一首古詩，看見你尚未察覺的關鍵。
+            收錄六套傳統傳統寺廟籤詩。請依直覺或信仰，選擇一套最相合的籤庫。
           </p>
-          <div class="hero-actions">
-            <a class="primary-cta" href="#draw">開始求籤 <span>↓</span></a>
-            <span class="quiet-note">靜心・默念・只問一事</span>
-          </div>
         </div>
 
-        <div class="hero-art" aria-hidden="true">
-          <div class="sun-disc">
-            <span>誠</span>
-          </div>
-          <div class="incense incense-one"></div>
-          <div class="incense incense-two"></div>
-          <div class="oracle-pot">
-            <i class="stick s1"></i><i class="stick s2"></i><i class="stick s3"></i>
-            <i class="stick s4"></i><i class="stick s5"></i><i class="stick s6"></i>
-            <div class="pot-mark">靈</div>
-          </div>
-          <div class="altar-line"></div>
+        <div class="deck-grid" role="list" aria-label="六大籤詩">
+          <button
+            v-for="deck in decks"
+            :key="deck.id"
+            type="button"
+            class="deck-card"
+            :class="{ selected: selectedId === deck.id }"
+            :aria-pressed="selectedId === deck.id"
+            @click="chooseDeck(deck.id)"
+          >
+            <span class="deck-count">{{ deck.count }}</span>
+            <span class="deck-main">
+              <strong>{{ deck.name }}</strong>
+              <small>{{ deck.origin }}</small>
+            </span>
+            <span class="deck-guidance">{{ deck.guidance }}</span>
+            <span class="select-mark">✓</span>
+          </button>
+        </div>
+
+        <div class="step-actions">
+          <button class="next-step-btn" type="button" @click="nextFromStep1">
+            下一步：誠心祈告 <span>→</span>
+          </button>
         </div>
       </section>
 
-      <section id="draw" class="draw-section">
-        <div class="section-intro">
-          <p class="kicker">SINCERE QUESTIONS · QUIET ANSWERS</p>
-          <h2>誠心求一籤</h2>
-          <p>選一套籤詩，將此刻最想問的事寫下來。</p>
+      <!-- 步驟 貳：寫下所問 -->
+      <section v-else-if="currentStep === 2" class="step-view step-two">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> 步驟 貳 ・ 淨心祈告</p>
+          <h1>誠心默念<br><em>寫下所問</em></h1>
+          <p class="hero-lead">
+            一籤一問，讓心定下來。描述越清晰具體，後續籤意與 AI 解讀越貼合處境。
+          </p>
         </div>
 
-        <div id="collections" class="step-block">
-          <div class="step-title">
-            <span>壹</span>
-            <div>
-              <h3>選擇籤庫</h3>
-              <p>依信仰或直覺，擇一即可</p>
-            </div>
-          </div>
-          <div class="deck-grid" role="list" aria-label="六大籤詩">
-            <button
-              v-for="deck in decks"
-              :key="deck.id"
-              type="button"
-              class="deck-card"
-              :class="{ selected: selectedId === deck.id }"
-              :aria-pressed="selectedId === deck.id"
-              @click="chooseDeck(deck.id)"
-            >
-              <span class="deck-count">{{ deck.count }}</span>
-              <span class="deck-main">
-                <strong>{{ deck.name }}</strong>
-                <small>{{ deck.origin }}</small>
-              </span>
-              <span class="deck-guidance">{{ deck.guidance }}</span>
-              <span class="select-mark">✓</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="step-block question-block">
-          <div class="step-title">
-            <span>貳</span>
-            <div>
-              <h3>寫下所問之事</h3>
-              <p>一籤一問，描述越具體，AI 解讀越貼近</p>
-            </div>
+        <div class="question-box">
+          <div class="selected-deck-pill">
+            已選籤庫：<strong>{{ selectedDeck.name }}</strong>（{{ selectedDeck.origin }}）
           </div>
           <label class="question-field">
             <span class="sr-only">所問之事</span>
@@ -217,9 +257,45 @@ async function askAi() {
               v-model="question"
               maxlength="300"
               placeholder="例如：我正在考慮轉換工作，未來三個月應把握什麼、又該留意什麼？"
+              autofocus
             ></textarea>
             <span class="char-count">{{ question.length }} / 300</span>
           </label>
+          <p v-if="notice" class="notice" role="alert">{{ notice }}</p>
+        </div>
+
+        <div class="step-actions dual-actions">
+          <button class="back-step-btn" type="button" @click="goToStep(1)">
+            ← 重選籤庫
+          </button>
+          <button class="next-step-btn" type="button" @click="nextFromStep2">
+            下一步：誠心搖籤 <span>→</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 步驟 參：搖籤求籤 -->
+      <section v-else-if="currentStep === 3" class="step-view step-three">
+        <div class="hero-copy align-center">
+          <p class="eyebrow center-eyebrow"><span></span> 步驟 參 ・ 淨心求籤</p>
+          <h1>一念既誠<br><em>籤落即定</em></h1>
+          <p class="hero-lead center-lead">
+            默念所問：「{{ question.trim() }}」，誠心搖動籤筒求取靈籤。
+          </p>
+        </div>
+
+        <div class="hero-art ritual-altar" aria-hidden="true">
+          <div class="sun-disc" :class="{ glowing: isDrawing }">
+            <span>誠</span>
+          </div>
+          <div class="incense incense-one"></div>
+          <div class="incense incense-two"></div>
+          <div class="oracle-pot" :class="{ shaking: isDrawing }">
+            <i class="stick s1"></i><i class="stick s2"></i><i class="stick s3"></i>
+            <i class="stick s4"></i><i class="stick s5"></i><i class="stick s6"></i>
+            <div class="pot-mark">靈</div>
+          </div>
+          <div class="altar-line"></div>
         </div>
 
         <div class="draw-action">
@@ -229,23 +305,30 @@ async function askAi() {
             type="button"
             :disabled="isDrawing"
             :aria-busy="isDrawing"
-            @click="drawOracle"
+            @click="performRitualAndDraw"
           >
             <span v-if="isDrawing" class="shaking-mark">筊</span>
             <span v-else class="button-seal">籤</span>
-            {{ isDrawing ? '靜候一念落定…' : '誠心求一籤' }}
+            {{ isDrawing ? '靜候一念落定…' : '誠心搖籤求籤' }}
           </button>
           <p v-if="notice" class="notice" role="alert">{{ notice }}</p>
         </div>
+
+        <div class="step-actions center-actions">
+          <button class="back-step-btn" type="button" @click="goToStep(2)">
+            ← 修改所問之事
+          </button>
+        </div>
       </section>
 
-      <section v-if="result" ref="resultSection" class="result-section">
+      <!-- 步驟 肆：觀籤與 AI 解讀 -->
+      <section v-else-if="currentStep === 4 && result" ref="resultSection" class="step-view step-four result-section">
         <div class="result-heading">
           <div>
             <p class="kicker">YOUR ORACLE</p>
             <h2>此刻所得之籤</h2>
           </div>
-          <button type="button" class="text-button" @click="drawOracle">重新求籤 ↻</button>
+          <button type="button" class="text-button" @click="resetRitual">重新求籤 ↺</button>
         </div>
 
         <div class="result-layout">
@@ -270,11 +353,23 @@ async function askAi() {
               <p v-for="line in result.lines" :key="line">{{ line }}</p>
             </div>
 
-            <div v-if="result.stories && result.stories.length" class="verse-section verse-stories">
+            <div v-if="formattedVerseStories.length" class="verse-section verse-stories">
               <div class="section-badge"><span>典故</span> 籤詩故事</div>
-              <ul class="story-list">
-                <li v-for="(story, idx) in result.stories" :key="idx">{{ story }}</li>
-              </ul>
+              <div class="story-cards">
+                <article
+                  v-for="(story, idx) in formattedVerseStories"
+                  :key="idx"
+                  class="story-card"
+                >
+                  <h4 v-if="story.title" class="story-title">
+                    <span class="story-index">典故 {{ idx + 1 }}</span>
+                    {{ story.title }}
+                  </h4>
+                  <div v-if="story.content.length" class="story-body">
+                    <p v-for="(line, lIdx) in story.content" :key="lIdx">{{ line }}</p>
+                  </div>
+                </article>
+              </div>
             </div>
 
             <div v-if="result.attributes && Object.keys(result.attributes).length" class="verse-section verse-attributes">
@@ -315,7 +410,7 @@ async function askAi() {
             <template v-else>
               <h3>讓 AI 結合所問之事解籤</h3>
               <p class="reading-copy">
-                籤詩重在映照處境。AI 會從詩句中的轉折、提醒與行動方向，
+                籤詩重在映照處境。AI 會從詩句中的轉折、典故與屬性指引，
                 回應你真正所問的事。
               </p>
               <ul class="ai-points">
@@ -338,22 +433,10 @@ async function askAi() {
         </div>
         <p v-if="notice" class="notice result-notice" role="alert">{{ notice }}</p>
       </section>
-
-      <section id="guidance" class="guidance-section">
-        <div>
-          <p class="kicker">READ WITH CLARITY</p>
-          <h2>籤不是答案，<br>是重新看事情的角度。</h2>
-        </div>
-        <ol>
-          <li><span>一</span><strong>一次只問一件事</strong><p>讓問題具體，籤意才有落點。</p></li>
-          <li><span>二</span><strong>先看關鍵，再看吉凶</strong><p>找出左右結果的因素，比標籤更重要。</p></li>
-          <li><span>三</span><strong>把行動留在自己手中</strong><p>籤詩供思考，不替代專業判斷與現實選擇。</p></li>
-        </ol>
-      </section>
     </main>
 
     <footer>
-      <a class="brand footer-brand" href="#"><span class="brand-seal">問</span><strong>靈籤閣</strong></a>
+      <a class="brand footer-brand" href="#" @click.prevent="resetRitual"><span class="brand-seal">問</span><strong>靈籤閣</strong></a>
       <p>傳統籤詩 × 當代省思</p>
       <a
         href="http://www.chance.org.tw/%E7%B1%A4%E8%A9%A9%E9%9B%86/%E5%85%AD%E5%8D%81%E7%94%B2%E5%AD%90%E7%B1%A4/%E7%B1%A4%E8%A9%A9%E7%B6%B2%E2%80%A7%E5%85%AD%E5%8D%81%E7%94%B2%E5%AD%90%E7%B1%A4.htm"
