@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { removeThoughtTags } from '../src/services/ai.ts'
+
+// Check removeThoughtTags logic
+assert.equal(removeThoughtTags('<thought>thinking process...</thought>Final Answer'), 'Final Answer')
+assert.equal(removeThoughtTags('<think>some reasoning\nsecond line</think>\n\n解籤內容'), '解籤內容')
+assert.equal(removeThoughtTags('<thought>unclosed thinking'), '')
 
 const source = readFileSync('src/data/oracleData.ts', 'utf8')
 const json = source.match(/export const oracleData = ([\s\S]+) as const/)?.[1]
@@ -19,4 +25,4 @@ for (const [id, count] of Object.entries(expected)) {
 }
 
 assert.equal(Object.values(data).flat().length, 520)
-console.log('oracle data: 6 decks, 520 verses, all attributes verified successfully')
+console.log('oracle data: 6 decks, 520 verses, all attributes & thought-stripping verified successfully')
