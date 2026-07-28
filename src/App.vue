@@ -17,7 +17,6 @@ import {
   RotateCcw,
   Settings,
   X,
-  Flame,
   ExternalLink,
   Bot
 } from 'lucide-vue-next'
@@ -244,65 +243,34 @@ async function askAi() {
       :max-step-reached="maxStepReached"
       :is-step-disabled="isStepDisabled"
       :steps="steps"
+      :active-main-tab="activeMainTab"
       @go-step="goToStep"
       @open-settings="openSettings"
       @reset="resetRitual"
+      @switch-tab="(tab) => activeMainTab = tab"
     />
 
     <!-- Main Container -->
-    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       
-      <!-- Top Navigation Tabs: 求籤與靈析 VS 線上點燈祈福 -->
-      <div class="flex justify-center mb-8">
-        <div class="inline-flex p-1.5 rounded-2xl bg-[#1A1A1A]/90 border border-[#D4AF37]/30 backdrop-blur-md shadow-xl">
-          <button
-            @click="activeMainTab = 'oracle'"
-            class="px-6 py-2.5 rounded-xl text-sm font-serif font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer"
-            :class="activeMainTab === 'oracle'
-              ? 'bg-[#8B0000] text-[#F3E5AB] border border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.4)]'
-              : 'text-stone-400 hover:text-stone-200'"
-          >
-            <Compass class="w-4 h-4 text-amber-400" />
-            <span>虔誠求籤解意</span>
-          </button>
-          <button
-            @click="activeMainTab = 'blessing'"
-            class="px-6 py-2.5 rounded-xl text-sm font-serif font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer"
-            :class="activeMainTab === 'blessing'
-              ? 'bg-[#8B0000] text-[#F3E5AB] border border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.4)]'
-              : 'text-stone-400 hover:text-stone-200'"
-          >
-            <Flame class="w-4 h-4 text-amber-400 animate-pulse" />
-            <span>線上點燈與立香祈福</span>
-          </button>
-        </div>
-      </div>
-
       <!-- Tab B: Standalone Blessing System View -->
-      <div v-if="activeMainTab === 'blessing'" class="transition-all duration-500">
+      <div v-if="activeMainTab === 'blessing'" class="transition-all duration-500 my-4">
         <BlessingSystem />
       </div>
 
       <!-- Tab A: Oracle Flow (Step 1 to Step 4) -->
       <div v-else>
-        <!-- Hero Title Section (香煙繚繞 Hero 區塊) -->
-        <div class="text-center max-w-3xl mx-auto my-6">
-          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D4AF37]/40 bg-[#8B0000]/20 text-xs font-serif text-[#D4AF37] tracking-widest mb-3 backdrop-blur-sm shadow-inner">
+        <!-- Sleek Compact Hero Section -->
+        <div class="text-center max-w-2xl mx-auto my-3 md:my-4">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#D4AF37]/30 bg-[#8B0000]/20 text-xs font-serif text-[#D4AF37] tracking-wider backdrop-blur-sm">
             <Sparkles class="w-3.5 h-3.5 text-amber-300" />
-            <span>誠心所至 萬法相感 ｜ 佛光普照 聖意開示</span>
+            <span>奉請傳統六大名剎聖籤 ｜ 誠心凝神默禱 領受 AI 智慧開示</span>
           </div>
-
-          <h2 class="text-4xl md:text-5xl font-black font-serif text-temple-gold tracking-wider my-3 leading-tight">
-            線上諸佛聖籤靈析
-          </h2>
-          <p class="text-sm md:text-base text-stone-300/90 leading-relaxed font-sans max-w-xl mx-auto">
-            奉請傳統六大名剎聖籤。誠心凝神默禱，將困惑記錄於疏文，領受靈籤典故與 AI 智慧開示。
-          </p>
         </div>
 
         <!-- Step 1: Choose Deck (擇聖籤) -->
         <Transition name="fade" mode="out-in">
-          <section v-if="currentStep === 1" class="my-10">
+          <section v-if="currentStep === 1" class="my-4">
             <div class="text-center mb-6">
               <span class="text-xs uppercase tracking-widest text-[#D4AF37] font-semibold">STEP 1</span>
               <h3 class="text-2xl md:text-3xl font-bold font-serif text-[#F3E5AB] mt-1">
