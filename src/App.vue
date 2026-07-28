@@ -18,6 +18,7 @@ const enableAiInterpretation = ref(true)
 const apiKey = ref(localStorage.getItem('oracle-api-key') || '')
 const baseUrl = ref(localStorage.getItem('oracle-base-url') || 'https://generativelanguage.googleapis.com/v1beta/openai')
 const model = ref(localStorage.getItem('oracle-model') || 'models/gemma-4-26b-a4b-it')
+const activeMobileTab = ref<'scroll' | 'ai'>('scroll')
 
 const fetchedModels = ref<string[]>([])
 const isFetchingModels = ref(false)
@@ -67,6 +68,7 @@ function chooseDeck(id: DeckId) {
   result.value = null
   aiAnswer.value = ''
   notice.value = ''
+  activeMobileTab.value = 'scroll'
   maxStepReached.value = Math.max(maxStepReached.value, 2) as 1 | 2 | 3 | 4
   goToStep(2)
 }
@@ -106,6 +108,7 @@ async function performRitualAndDraw() {
   aiAnswer.value = ''
   result.value = null
   isDrawing.value = true
+  activeMobileTab.value = 'scroll'
   await new Promise((resolve) => window.setTimeout(resolve, 3200))
   result.value = drawFrom(selectedDeck.value)
   isDrawing.value = false
@@ -121,6 +124,7 @@ function resetRitual() {
   notice.value = ''
   selectedId.value = null
   question.value = ''
+  activeMobileTab.value = 'scroll'
   maxStepReached.value = 1
   currentStep.value = 1
   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -215,7 +219,7 @@ async function askAi() {
     <header class="topbar temple-topbar">
       <a class="brand" href="#" aria-label="靈籤閣首頁" @click.prevent="resetRitual">
         <span class="brand-seal temple-seal">靈</span>
-        <span>
+        <span class="brand-title">
           <strong>靈籤閣</strong>
           <small>SACRED TEMPLE ORACLE</small>
         </span>
@@ -243,7 +247,7 @@ async function askAi() {
 
       <button class="settings-link temple-settings-btn" type="button" @click="openSettings">
         <span class="status-dot" :class="{ ready: apiKey }"></span>
-        AI 靈析設定
+        <span class="settings-btn-text">AI 靈析設定</span>
       </button>
     </header>
 
@@ -366,22 +370,22 @@ async function askAi() {
         <div class="ritual-progress-bar temple-ritual-progress" :class="{ active: isDrawing }">
           <div class="progress-step" :class="{ active: isDrawing }">
             <span class="step-icon">🧧</span>
-            <span>淨手焚香</span>
+            <span>淨手</span>
           </div>
           <span class="progress-arrow">➔</span>
           <div class="progress-step" :class="{ active: isDrawing }">
             <span class="step-icon">🎍</span>
-            <span>搖動竹筒</span>
+            <span>搖筒</span>
           </div>
           <span class="progress-arrow">➔</span>
           <div class="progress-step" :class="{ active: isDrawing }">
             <span class="step-icon">✨</span>
-            <span>靈籤躍出</span>
+            <span>靈籤</span>
           </div>
           <span class="progress-arrow">➔</span>
           <div class="progress-step" :class="{ active: isDrawing }">
             <span class="step-icon">☯️</span>
-            <span>聖筊應驗</span>
+            <span>聖筊</span>
           </div>
         </div>
 
@@ -490,9 +494,32 @@ async function askAi() {
           </div>
         </div>
 
+        <!-- 手機介面專用分頁切換按鈕 -->
+        <div v-if="showAiPanel" class="mobile-result-tabs" role="tablist" aria-label="解籤內容切換">
+          <button
+            type="button"
+            class="mobile-tab-btn"
+            :class="{ active: activeMobileTab === 'scroll' }"
+            @click="activeMobileTab = 'scroll'"
+          >
+            📜 黃絹聖籤與典故
+          </button>
+          <button
+            type="button"
+            class="mobile-tab-btn"
+            :class="{ active: activeMobileTab === 'ai' }"
+            @click="activeMobileTab = 'ai'"
+          >
+            ✦ AI 佛意開示
+          </button>
+        </div>
+
         <div class="result-layout temple-result-layout" :class="{ 'single-scroll': !showAiPanel }">
           <!-- 黃絹聖籤卡片 -->
-          <article class="fortune-paper temple-sacred-scroll">
+          <article
+            class="fortune-paper temple-sacred-scroll"
+            :class="{ 'mobile-tab-hidden': showAiPanel && activeMobileTab !== 'scroll' }"
+          >
             <div class="paper-corner top-left"></div>
             <div class="paper-corner bottom-right"></div>
             <div class="fortune-meta temple-scroll-meta">
@@ -560,7 +587,11 @@ async function askAi() {
           </article>
 
           <!-- 右側 AI 佛意靈析面板（有撰寫疏文且開啟 AI 時顯示） -->
-          <aside v-if="showAiPanel" class="reading-panel temple-reading-panel">
+          <aside
+            v-if="showAiPanel"
+            class="reading-panel temple-reading-panel"
+            :class="{ 'mobile-tab-hidden': showAiPanel && activeMobileTab !== 'ai' }"
+          >
             <p class="panel-label temple-panel-label">{{ question.trim() ? '信士所稟疏文' : '信士參拜心念' }}</p>
             <blockquote class="temple-blockquote">「{{ question.trim() || '默禱參拜，求賜總體聖意開示' }}」</blockquote>
             <div class="divider temple-divider"><span>開示</span></div>
