@@ -32,7 +32,7 @@ const emit = defineEmits<{
         </div>
         <div>
           <h1 class="text-lg md:text-xl font-bold font-serif text-temple-gold tracking-wide">
-            諸佛聖籤
+            靈籤閣
           </h1>
           <p class="hidden sm:block text-[9px] text-stone-400 font-sans tracking-widest uppercase">
             Sacred Temple Oracle

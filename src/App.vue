@@ -617,7 +617,7 @@ async function askAi() {
           <div class="w-6 h-6 border border-[#D4AF37] bg-[#8B0000] text-[#F3E5AB] flex items-center justify-center font-bold text-xs">
             籤
           </div>
-          <span class="text-stone-300 font-bold">諸佛聖籤</span>
+          <span class="text-stone-300 font-bold">靈籤閣</span>
           <span>× 傳統求籤與 AI 靈析</span>
         </div>
 
