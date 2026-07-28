@@ -3,6 +3,25 @@ import { computed, nextTick, ref } from 'vue'
 import { deckById, decks, drawFrom, type DeckId, type OracleVerse } from './data/decks'
 import { defaultCspPresets, fetchModels, formatStories, interpretOracle, type CspPreset } from './services/ai'
 
+import ParticleCanvas from './components/ParticleCanvas.vue'
+import TempleHeader from './components/TempleHeader.vue'
+import BlessingSystem from './components/BlessingSystem.vue'
+import FortuneStickCylinder from './components/FortuneStickCylinder.vue'
+
+import {
+  Sparkles,
+  BookOpen,
+  Compass,
+  ArrowRight,
+  ArrowLeft,
+  RotateCcw,
+  Settings,
+  X,
+  Flame,
+  ExternalLink,
+  Bot
+} from 'lucide-vue-next'
+
 const currentStep = ref<1 | 2 | 3 | 4>(1)
 const maxStepReached = ref<1 | 2 | 3 | 4>(1)
 const selectedId = ref<DeckId | null>(null)
@@ -19,6 +38,7 @@ const apiKey = ref(localStorage.getItem('oracle-api-key') || '')
 const baseUrl = ref(localStorage.getItem('oracle-base-url') || 'https://generativelanguage.googleapis.com/v1beta/openai')
 const model = ref(localStorage.getItem('oracle-model') || 'models/gemma-4-26b-a4b-it')
 const activeMobileTab = ref<'scroll' | 'ai'>('scroll')
+const activeMainTab = ref<'oracle' | 'blessing'>('oracle')
 
 const fetchedModels = ref<string[]>([])
 const isFetchingModels = ref(false)
@@ -109,7 +129,7 @@ async function performRitualAndDraw() {
   result.value = null
   isDrawing.value = true
   activeMobileTab.value = 'scroll'
-  await new Promise((resolve) => window.setTimeout(resolve, 3200))
+  await new Promise((resolve) => window.setTimeout(resolve, 3000))
   result.value = drawFrom(selectedDeck.value)
   isDrawing.value = false
   maxStepReached.value = 4
@@ -214,534 +234,578 @@ async function askAi() {
 </script>
 
 <template>
-  <div class="site-shell temple-theme">
-    <!-- 頂部山門與寺廟標題 -->
-    <header class="topbar temple-topbar">
-      <a class="brand" href="#" aria-label="靈籤閣首頁" @click.prevent="resetRitual">
-        <span class="brand-seal temple-seal">靈</span>
-        <span class="brand-title">
-          <strong>靈籤閣</strong>
-          <small>SACRED TEMPLE ORACLE</small>
-        </span>
-      </a>
+  <div class="min-h-screen bg-[#121212] text-[#F3E5AB] relative overflow-hidden font-sans">
+    <!-- HTML5 Canvas Background Smoke Particle Layer -->
+    <ParticleCanvas />
 
-      <!-- 參拜儀式步驟切換器 -->
-      <nav class="ritual-stepper temple-stepper" aria-label="求籤參拜步驟">
-        <button
-          v-for="step in steps"
-          :key="step.num"
-          type="button"
-          class="step-node temple-step"
-          :class="{
-            active: currentStep === step.num,
-            completed: currentStep > step.num,
-            disabled: isStepDisabled(step.num)
-          }"
-          :disabled="isStepDisabled(step.num)"
-          @click="goToStep(step.num)"
-        >
-          <span class="step-symbol">{{ step.symbol }}</span>
-          <span class="step-text">{{ step.label }}</span>
-        </button>
-      </nav>
+    <!-- Temple Topbar Navigation -->
+    <TempleHeader
+      :current-step="currentStep"
+      :max-step-reached="maxStepReached"
+      :is-step-disabled="isStepDisabled"
+      :steps="steps"
+      @go-step="goToStep"
+      @open-settings="openSettings"
+      @reset="resetRitual"
+    />
 
-      <button class="settings-link temple-settings-btn" type="button" @click="openSettings">
-        <span class="status-dot" :class="{ ready: apiKey }"></span>
-        <span class="settings-btn-text">AI 靈析設定</span>
-      </button>
-    </header>
+    <!-- Main Container -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      
+      <!-- Top Navigation Tabs: 求籤與靈析 VS 線上點燈祈福 -->
+      <div class="flex justify-center mb-8">
+        <div class="inline-flex p-1.5 rounded-2xl bg-[#1A1A1A]/90 border border-[#D4AF37]/30 backdrop-blur-md shadow-xl">
+          <button
+            @click="activeMainTab = 'oracle'"
+            class="px-6 py-2.5 rounded-xl text-sm font-serif font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer"
+            :class="activeMainTab === 'oracle'
+              ? 'bg-[#8B0000] text-[#F3E5AB] border border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.4)]'
+              : 'text-stone-400 hover:text-stone-200'"
+          >
+            <Compass class="w-4 h-4 text-amber-400" />
+            <span>虔誠求籤解意</span>
+          </button>
+          <button
+            @click="activeMainTab = 'blessing'"
+            class="px-6 py-2.5 rounded-xl text-sm font-serif font-bold transition-all duration-300 flex items-center gap-2 cursor-pointer"
+            :class="activeMainTab === 'blessing'
+              ? 'bg-[#8B0000] text-[#F3E5AB] border border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.4)]'
+              : 'text-stone-400 hover:text-stone-200'"
+          >
+            <Flame class="w-4 h-4 text-amber-400 animate-pulse" />
+            <span>線上點燈與立香祈福</span>
+          </button>
+        </div>
+      </div>
 
-    <main class="ritual-main temple-main">
-      <!-- 步驟 壹：選擇聖籤庫 -->
-      <section v-if="currentStep === 1" class="step-view step-one temple-step-view">
-        <div class="hero-copy temple-hero">
-          <div class="temple-motto">誠心所至 萬法相感 ｜ 佛光普照 聖意開示</div>
-          <p class="eyebrow temple-eyebrow"><span></span> 步驟 壹 ・ 擇諸佛聖籤</p>
-          <h1>心有所求<br><em>虔誠擇籤</em></h1>
-          <p class="hero-lead temple-lead">
-            奉請六大名剎靈籤。請屏息靜氣、定心凝神，選擇一套與當下心境最具感應的聖籤。
+      <!-- Tab B: Standalone Blessing System View -->
+      <div v-if="activeMainTab === 'blessing'" class="transition-all duration-500">
+        <BlessingSystem />
+      </div>
+
+      <!-- Tab A: Oracle Flow (Step 1 to Step 4) -->
+      <div v-else>
+        <!-- Hero Title Section (香煙繚繞 Hero 區塊) -->
+        <div class="text-center max-w-3xl mx-auto my-6">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D4AF37]/40 bg-[#8B0000]/20 text-xs font-serif text-[#D4AF37] tracking-widest mb-3 backdrop-blur-sm shadow-inner">
+            <Sparkles class="w-3.5 h-3.5 text-amber-300" />
+            <span>誠心所至 萬法相感 ｜ 佛光普照 聖意開示</span>
+          </div>
+
+          <h2 class="text-4xl md:text-5xl font-black font-serif text-temple-gold tracking-wider my-3 leading-tight">
+            線上諸佛聖籤靈析
+          </h2>
+          <p class="text-sm md:text-base text-stone-300/90 leading-relaxed font-sans max-w-xl mx-auto">
+            奉請傳統六大名剎聖籤。誠心凝神默禱，將困惑記錄於疏文，領受靈籤典故與 AI 智慧開示。
           </p>
         </div>
 
-        <div class="deck-grid temple-deck-grid" role="list" aria-label="六大籤詩">
-          <button
-            v-for="deck in decks"
-            :key="deck.id"
-            type="button"
-            class="deck-card temple-deck-card"
-            :class="{ selected: selectedId === deck.id }"
-            :aria-pressed="selectedId === deck.id"
-            @click="chooseDeck(deck.id)"
-          >
-            <span class="deck-stamp">聖籤</span>
-            <span class="deck-count">{{ deck.count }} 籤</span>
-            <span class="deck-main">
-              <strong>{{ deck.name }}</strong>
-              <small>{{ deck.origin }}</small>
-            </span>
-            <span class="deck-guidance">{{ deck.guidance }}</span>
-            <span class="select-mark">卍</span>
-          </button>
-        </div>
-
-        <div class="step-actions">
-          <button class="next-step-btn temple-btn-primary" type="button" @click="nextFromStep1">
-            下一步：淨手稟告 <span>➔</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- 步驟 貳：寫下稟告疏文 -->
-      <section v-else-if="currentStep === 2" class="step-view step-two temple-step-view">
-        <div class="hero-copy temple-hero">
-          <p class="eyebrow temple-eyebrow"><span></span> 步驟 貳 ・ 淨心稟告疏文</p>
-          <h1>誠心默念<br><em>撰寫疏文</em></h1>
-          <p class="hero-lead temple-lead">
-            一籤一問，莫求多事。誠心稟告三寶與諸天神佛，將心中困惑明確記錄於疏文中。
-          </p>
-        </div>
-
-        <!-- AI 解籤服務切換卡片 -->
-        <div class="ai-toggle-card temple-ai-toggle" :class="{ active: enableAiInterpretation }">
-          <div class="toggle-main-row">
-            <label class="toggle-control">
-              <input v-model="enableAiInterpretation" type="checkbox" class="toggle-checkbox">
-              <span class="toggle-title">✦ 啟用 AI 佛法靈析開示</span>
-            </label>
-            <button
-              v-if="enableAiInterpretation"
-              type="button"
-              class="inline-settings-btn temple-btn-inline-settings"
-              @click="openSettings"
-            >
-              <span class="status-dot" :class="{ ready: apiKey }"></span>
-              ⚙️ 設定 API 金鑰 / 模型
-            </button>
-          </div>
-          <p class="toggle-desc">
-            {{ enableAiInterpretation ? '開啟：可於下方撰寫稟告疏文，由 AI 結合您的所求事項與聖籤進行專屬深度開示。' : '關閉（傳統默禱參拜模式）：無須撰寫疏文，請於心中默禱，求籤結果僅呈現傳統聖籤與典故，不呼叫 AI 服務。' }}
-          </p>
-        </div>
-
-        <!-- 疏文輸入框（僅在啟用 AI 時顯示） -->
-        <div v-if="enableAiInterpretation" class="question-box temple-scroll-box">
-          <div class="scroll-header">
-            <span class="scroll-seal">疏文</span>
-            <span class="scroll-required-tag">（AI 解籤必填）</span>
-            <div class="selected-deck-pill temple-pill">
-              奉請籤庫：<strong>{{ selectedDeck.name }}</strong>（{{ selectedDeck.origin }}）
-            </div>
-          </div>
-          <label class="question-field temple-textarea-wrapper">
-            <span class="sr-only">稟告疏文</span>
-            <textarea
-              v-model="question"
-              maxlength="300"
-              placeholder="【求籤疏文】信士/信女誠心祈求指點迷津：例如：弟子近日面臨工作抉擇，懇求神佛賜籤指引方向與避坑注意事項..."
-              autofocus
-            ></textarea>
-            <span class="char-count temple-char-count">{{ question.length }} / 300</span>
-          </label>
-        </div>
-
-        <p v-if="notice" class="notice temple-notice" role="alert">{{ notice }}</p>
-
-        <div class="step-actions dual-actions">
-          <button class="back-step-btn temple-btn-secondary" type="button" @click="goToStep(1)">
-            ← 重擇聖籤
-          </button>
-          <button class="next-step-btn temple-btn-primary" type="button" @click="nextFromStep2">
-            下一步：誠心搖籤 <span>➔</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- 步驟 參：佛龕搖籤與擲聖筊 -->
-      <section v-else-if="currentStep === 3" class="step-view step-three temple-step-view">
-        <div class="hero-copy align-center temple-hero">
-          <p class="eyebrow center-eyebrow temple-eyebrow"><span></span> 步驟 參 ・ 神龕求靈籤</p>
-          <h1>一念既誠<br><em>聖意降臨</em></h1>
-          <p class="hero-lead center-lead temple-lead">
-            {{ question.trim() ? `默念稟告之事：「${question.trim()}」，誠心搖動竹籤筒求取靈籤。` : '屏息靜氣、定心凝神，搖動竹籤筒求取聖意靈籤。' }}
-          </p>
-        </div>
-
-        <!-- 儀式進行中階段指示器 -->
-        <div class="ritual-progress-bar temple-ritual-progress" :class="{ active: isDrawing }">
-          <div class="progress-step" :class="{ active: isDrawing }">
-            <span class="step-icon">🧧</span>
-            <span>淨手</span>
-          </div>
-          <span class="progress-arrow">➔</span>
-          <div class="progress-step" :class="{ active: isDrawing }">
-            <span class="step-icon">🎍</span>
-            <span>搖筒</span>
-          </div>
-          <span class="progress-arrow">➔</span>
-          <div class="progress-step" :class="{ active: isDrawing }">
-            <span class="step-icon">✨</span>
-            <span>靈籤</span>
-          </div>
-          <span class="progress-arrow">➔</span>
-          <div class="progress-step" :class="{ active: isDrawing }">
-            <span class="step-icon">☯️</span>
-            <span>聖筊</span>
-          </div>
-        </div>
-
-        <!-- 道教神座主祭壇 -->
-        <div class="hero-art ritual-altar temple-shrine-altar" aria-hidden="true">
-          <!-- 背景太極八卦金光神輪 -->
-          <div class="taoist-bagua-halo" :class="{ glowing: isDrawing }">
-            <div class="bagua-ring outer-trigrams">
-              <span>乾</span><span>兌</span><span>離</span><span>震</span>
-              <span>巽</span><span>坎</span><span>艮</span><span>坤</span>
-            </div>
-            <div class="bagua-ring inner-circle"></div>
-            <div class="taiji-center-mark">☯</div>
-          </div>
-
-          <!-- 三足宣德古銅香爐與紫氣祥雲青煙 -->
-          <div class="bronze-incense-burner">
-            <div class="burner-body">
-              <span class="burner-seal">鼎</span>
-            </div>
-            <div class="smoke-particles">
-              <div class="incense incense-one"></div>
-              <div class="incense incense-two"></div>
-              <div class="incense incense-three"></div>
-            </div>
-          </div>
-
-          <!-- 古風道教竹籤筒 -->
-          <div class="oracle-bamboo-cylinder temple-bamboo-cylinder" :class="{ shaking: isDrawing }">
-            <div class="cylinder-band top-band"></div>
-            <div class="cylinder-band mid-band"></div>
-            <div class="cylinder-band bot-band"></div>
-
-            <!-- 竹筒內的諸靈籤 -->
-            <div class="bamboo-slips-bundle">
-              <div class="bamboo-slip s1"><span class="slip-tip">朱</span></div>
-              <div class="bamboo-slip s2"><span class="slip-tip">朱</span></div>
-              <div class="bamboo-slip s3"><span class="slip-tip">朱</span></div>
-              <div class="bamboo-slip s4"><span class="slip-tip">朱</span></div>
-              <div class="bamboo-slip s5"><span class="slip-tip">朱</span></div>
-              <div class="bamboo-slip s6"><span class="slip-tip">朱</span></div>
-              <div class="bamboo-slip s7"><span class="slip-tip">朱</span></div>
+        <!-- Step 1: Choose Deck (擇聖籤) -->
+        <Transition name="fade" mode="out-in">
+          <section v-if="currentStep === 1" class="my-10">
+            <div class="text-center mb-6">
+              <span class="text-xs uppercase tracking-widest text-[#D4AF37] font-semibold">STEP 1</span>
+              <h3 class="text-2xl md:text-3xl font-bold font-serif text-[#F3E5AB] mt-1">
+                步驟 壹 ・ 選擇聖籤庫
+              </h3>
             </div>
 
-            <div class="pot-mark temple-pot-seal">
-              <span class="seal-character">聖籤感應</span>
-            </div>
-          </div>
-
-          <!-- 躍出浮空的金光靈籤 (搖籤時動畫觸發) -->
-          <div class="rising-sacred-stick" :class="{ active: isDrawing }">
-            <div class="stick-head">第一籤</div>
-            <div class="stick-body">聖意開示</div>
-            <div class="stick-glow"></div>
-          </div>
-
-          <!-- 擲筊（聖筊）降臨動畫 -->
-          <div class="divine-poe-pair" :class="{ active: isDrawing }">
-            <div class="poe-block poe-left">
-              <span class="poe-face flat">陽</span>
-            </div>
-            <div class="poe-block poe-right">
-              <span class="poe-face convex">陰</span>
-            </div>
-            <div class="poe-blessing-tag">✦ 聖筊應驗・賜予吉籤 ✦</div>
-          </div>
-
-          <!-- 紫檀金邊神案桌底座 -->
-          <div class="altar-table-surface temple-altar-base">
-            <div class="table-border-gold"></div>
-          </div>
-        </div>
-
-        <div class="draw-action temple-draw-action">
-          <button
-            class="draw-button temple-draw-btn"
-            type="button"
-            :disabled="isDrawing"
-            :aria-busy="isDrawing"
-            @click="performRitualAndDraw"
-          >
-            <span v-if="isDrawing" class="shaking-mark temple-shaking-seal">卍</span>
-            <span v-else class="button-seal temple-button-seal">籤</span>
-            {{ isDrawing ? '諸佛感應・靈籤擲筊中…' : '誠心搖籤・求取聖意' }}
-          </button>
-          <p v-if="notice" class="notice temple-notice" role="alert">{{ notice }}</p>
-        </div>
-
-        <div class="step-actions center-actions">
-          <button class="back-step-btn temple-btn-secondary" type="button" @click="goToStep(2)">
-            ← 修改稟告疏文
-          </button>
-        </div>
-      </section>
-
-      <!-- 步驟 肆：黃絹聖籤解與 AI 佛意靈析 -->
-      <section v-else-if="currentStep === 4 && result" ref="resultSection" class="step-view step-four result-section temple-result-section">
-        <div class="result-heading temple-result-heading">
-          <p class="kicker temple-kicker">感應聖籤・諸佛靈應</p>
-          <div class="heading-main-row">
-            <h2>感應所得之聖籤</h2>
-            <button type="button" class="temple-reset-btn" @click="resetRitual">
-              <span>重新參拜求籤</span>
-              <i class="reset-icon">↺</i>
-            </button>
-          </div>
-        </div>
-
-        <!-- 手機介面專用分頁切換按鈕 -->
-        <div v-if="showAiPanel" class="mobile-result-tabs" role="tablist" aria-label="解籤內容切換">
-          <button
-            type="button"
-            class="mobile-tab-btn"
-            :class="{ active: activeMobileTab === 'scroll' }"
-            @click="activeMobileTab = 'scroll'"
-          >
-            📜 黃絹聖籤與典故
-          </button>
-          <button
-            type="button"
-            class="mobile-tab-btn"
-            :class="{ active: activeMobileTab === 'ai' }"
-            @click="activeMobileTab = 'ai'"
-          >
-            ✦ AI 佛意開示
-          </button>
-        </div>
-
-        <div class="result-layout temple-result-layout" :class="{ 'single-scroll': !showAiPanel }">
-          <!-- 黃絹聖籤卡片 -->
-          <article
-            class="fortune-paper temple-sacred-scroll"
-            :class="{ 'mobile-tab-hidden': showAiPanel && activeMobileTab !== 'scroll' }"
-          >
-            <div class="paper-corner top-left"></div>
-            <div class="paper-corner bottom-right"></div>
-            <div class="fortune-meta temple-scroll-meta">
-              <span>{{ selectedDeck.name }}</span>
-              <span>{{ selectedDeck.origin }}</span>
-            </div>
-            <div class="number-seal temple-number-seal">
-              <small>第</small>
-              <strong>{{ result.number }}</strong>
-              <small>籤</small>
-              <span v-if="result.fortune" class="fortune-rating-tag temple-rating-tag">{{ result.fortune }}</span>
-            </div>
-            <div v-if="result.ganzhi || result.element" class="ganzhi-banner temple-ganzhi-banner">
-              <span v-if="result.ganzhi" class="ganzhi-pill temple-ganzhi-pill">【{{ result.ganzhi }}】</span>
-              <span v-if="result.element" class="element-pill temple-element-pill">{{ result.element }}</span>
-            </div>
-            <div class="poem temple-poem">
-              <p v-for="line in result.lines" :key="line">{{ line }}</p>
-            </div>
-
-            <!-- 籤詩故事卡片 -->
-            <div v-if="formattedVerseStories.length" class="verse-section verse-stories temple-verse-section">
-              <div class="section-badge temple-section-badge"><span>典故</span> 籤詩故事</div>
-              <div class="story-cards">
-                <article
-                  v-for="(story, idx) in formattedVerseStories"
-                  :key="idx"
-                  class="story-card temple-story-card"
-                >
-                  <h4 class="story-title temple-story-title">
-                    <span class="story-index temple-story-index">典故 {{ idx + 1 }}</span>
-                    {{ story.title || '典故說明' }}
-                  </h4>
-                  <div v-if="story.content.length" class="story-body temple-story-body">
-                    <p v-for="(line, lIdx) in story.content" :key="lIdx">{{ line }}</p>
+            <!-- Deck Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
+              <div
+                v-for="deck in decks"
+                :key="deck.id"
+                @click="chooseDeck(deck.id)"
+                class="glass-temple-card rounded-2xl p-6 cursor-pointer relative overflow-hidden flex flex-col justify-between group"
+                :class="selectedId === deck.id ? 'glass-temple-card-active' : ''"
+              >
+                <div>
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="px-2.5 py-1 rounded bg-[#8B0000] text-[#F3E5AB] border border-[#D4AF37]/50 text-xs font-serif font-bold">
+                      {{ deck.name }}
+                    </span>
+                    <span class="text-xs text-amber-300 font-sans bg-black/40 px-2 py-1 rounded border border-amber-500/20">
+                      {{ deck.count }} 籤
+                    </span>
                   </div>
-                </article>
-              </div>
-            </div>
 
-            <!-- 諸事指引屬性 -->
-            <div v-if="result.attributes && Object.keys(result.attributes).length" class="verse-section verse-attributes temple-verse-section">
-              <div class="section-badge temple-section-badge"><span>指引</span> 諸事指引</div>
-              <div class="attributes-grid temple-attr-grid">
-                <div
-                  v-for="(val, key) in result.attributes"
-                  :key="key"
-                  class="attr-chip temple-attr-chip"
-                >
-                  <span class="attr-key">{{ key }}</span>
-                  <span class="attr-val">{{ val }}</span>
+                  <h4 class="text-xl font-bold font-serif text-[#F3E5AB] mb-1 group-hover:text-amber-300 transition-colors">
+                    {{ deck.name }}
+                  </h4>
+                  <p class="text-xs text-stone-400 font-sans mb-3">
+                    來源：{{ deck.origin }}
+                  </p>
+
+                  <p class="text-xs text-stone-300/90 leading-relaxed font-sans bg-stone-900/60 p-3 rounded-xl border border-stone-800">
+                    主求指引：<strong class="text-amber-200">{{ deck.guidance }}</strong>
+                  </p>
+                </div>
+
+                <div class="mt-6 flex items-center justify-between pt-3 border-t border-[#D4AF37]/20 text-xs">
+                  <span class="text-stone-400">點擊點選聖籤</span>
+                  <span class="text-[#D4AF37] font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                    參拜求籤 ➔
+                  </span>
                 </div>
               </div>
             </div>
 
-            <!-- 傳統解說明 -->
-            <div v-if="result.explanations && result.explanations.length" class="verse-section verse-explanations temple-verse-section">
-              <div class="section-badge temple-section-badge"><span>聖意</span> 傳統解曰</div>
-              <div class="explanations-content temple-exp-content">
-                <p v-for="(exp, idx) in result.explanations" :key="idx">{{ exp }}</p>
+            <div v-if="notice" class="text-center p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-200 text-sm max-w-md mx-auto my-4">
+              {{ notice }}
+            </div>
+
+            <div class="text-center my-6">
+              <button
+                @click="nextFromStep1"
+                class="px-8 py-3.5 rounded-xl font-serif text-base font-bold bg-gradient-to-r from-[#8B0000] to-[#5C0000] border border-[#D4AF37] text-[#F3E5AB] hover:from-[#A00000] shadow-[0_0_20px_rgba(139,0,0,0.5)] transition-all cursor-pointer inline-flex items-center gap-2"
+              >
+                <span>下一步：撰寫稟告疏文</span>
+                <ArrowRight class="w-4 h-4" />
+              </button>
+            </div>
+          </section>
+
+          <!-- Step 2: Write Question / AI Prayer Document (稟心愿) -->
+          <section v-else-if="currentStep === 2" class="my-10 max-w-3xl mx-auto">
+            <div class="text-center mb-6">
+              <span class="text-xs uppercase tracking-widest text-[#D4AF37] font-semibold">STEP 2</span>
+              <h3 class="text-2xl md:text-3xl font-bold font-serif text-[#F3E5AB] mt-1">
+                步驟 貳 ・ 淨心稟告疏文
+              </h3>
+            </div>
+
+            <!-- AI Toggle Glassmorphic Card -->
+            <div class="glass-temple-card rounded-2xl p-6 mb-6 border border-[#D4AF37]/40">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#D4AF37]/20">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input
+                    v-model="enableAiInterpretation"
+                    type="checkbox"
+                    class="w-5 h-5 accent-[#8B0000] rounded cursor-pointer"
+                  />
+                  <span class="text-lg font-serif font-bold text-[#F3E5AB] flex items-center gap-2">
+                    <Sparkles class="w-5 h-5 text-amber-300" />
+                    啟用 AI 佛法靈析開示
+                  </span>
+                </label>
+
+                <button
+                  v-if="enableAiInterpretation"
+                  @click="openSettings"
+                  class="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 text-xs text-amber-200 bg-stone-900/80 hover:bg-[#8B0000]/40 transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Settings class="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>{{ apiKey ? 'API 已連線' : '設定 API 金鑰' }}</span>
+                </button>
+              </div>
+
+              <p class="text-xs text-stone-300 font-sans mt-3 leading-relaxed">
+                {{ enableAiInterpretation 
+                  ? '已開啟 AI 靈析：請於下方寫下心中困惑或所求事項，AI 將針對您的具體事項解析籤詩。' 
+                  : '已關閉 AI 靈析：切換為傳統默禱參拜模式，無須輸入文字，直接搖籤求取典故聖籤。' }}
+              </p>
+            </div>
+
+            <!-- Scroll Paper Textarea -->
+            <div v-if="enableAiInterpretation" class="glass-temple-card rounded-2xl p-6 border border-[#D4AF37]/40 relative">
+              <div class="flex items-center justify-between mb-3 text-xs text-amber-200/80 font-serif">
+                <span>【 信士祈福稟告疏文 】</span>
+                <span>奉請籤庫：{{ selectedDeck.name }}</span>
+              </div>
+
+              <textarea
+                v-model="question"
+                maxlength="300"
+                rows="5"
+                placeholder="信士/信女誠心祈求神佛指點迷津：例如弟子近日面臨轉職抉擇，懇求神佛賜籤指引方向..."
+                class="w-full bg-[#121212]/90 border border-[#D4AF37]/30 rounded-xl p-4 text-sm text-[#F3E5AB] placeholder-stone-500 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] font-sans leading-relaxed transition-all resize-none"
+              ></textarea>
+
+              <div class="flex justify-between items-center mt-2 text-xs text-stone-400">
+                <span>提示：誠心寫下真實困惑，所獲得之開示將更貼切。</span>
+                <span>{{ question.length }} / 300</span>
               </div>
             </div>
 
-            <p class="paper-foot temple-paper-foot">先觀其因，再問其果；吉中藏戒，凶中有路。</p>
-          </article>
+            <div v-if="notice" class="text-center p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-200 text-sm my-4">
+              {{ notice }}
+            </div>
 
-          <!-- 右側 AI 佛意靈析面板（有撰寫疏文且開啟 AI 時顯示） -->
-          <aside
-            v-if="showAiPanel"
-            class="reading-panel temple-reading-panel"
-            :class="{ 'mobile-tab-hidden': showAiPanel && activeMobileTab !== 'ai' }"
-          >
-            <p class="panel-label temple-panel-label">{{ question.trim() ? '信士所稟疏文' : '信士參拜心念' }}</p>
-            <blockquote class="temple-blockquote">「{{ question.trim() || '默禱參拜，求賜總體聖意開示' }}」</blockquote>
-            <div class="divider temple-divider"><span>開示</span></div>
-
-            <template v-if="aiAnswer">
-              <div class="ai-answer temple-ai-answer">{{ aiAnswer }}</div>
-              <button class="secondary-button temple-btn-secondary" type="button" :disabled="isInterpreting" @click="askAi">
-                重新領受佛意開示
-              </button>
-            </template>
-            <template v-else>
-              <h3>✦ 佛法靈析・聖意開示 ✦</h3>
-              <p class="reading-copy temple-reading-copy">
-                籤詩如鏡，映照當下心念。AI 將結合所稟告疏文與諸佛聖意，
-                為您開示指引破局之道。
-              </p>
-              <ul class="ai-points temple-ai-points">
-                <li><span>01</span> 明辨因果起伏</li>
-                <li><span>02</span> 對照當下處境</li>
-                <li><span>03</span> 賜予行事方略</li>
-              </ul>
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-between gap-4 mt-8">
               <button
-                class="ai-button temple-ai-btn"
-                type="button"
-                :disabled="isInterpreting"
-                :aria-busy="isInterpreting"
-                @click="askAi"
+                @click="goToStep(1)"
+                class="px-5 py-3 rounded-xl text-sm font-serif border border-stone-700 text-stone-300 hover:border-stone-500 transition-all flex items-center gap-2 cursor-pointer"
               >
-                <span>✦</span>
-                {{ isInterpreting ? '正在凝神領受聖意…' : apiKey ? '請 AI 領受聖意開示' : '設定 API 後領受開示' }}
+                <ArrowLeft class="w-4 h-4" />
+                <span>重擇聖籤庫</span>
               </button>
-            </template>
-          </aside>
-        </div>
 
-        <div v-if="!showAiPanel" class="silent-prayer-notice">
-          <span class="notice-icon">🌸</span>
-          <div class="notice-text">
-            <strong>{{ !enableAiInterpretation ? '信士選擇僅參拜求取傳統聖籤：' : '信士以默禱參拜求籤：' }}</strong>
-            <span>
-              聖籤古意與歷代典故已如上開示。
-              <template v-if="!enableAiInterpretation">
-                若需 AI 結合疏文開示，可點擊上方「<a href="#" @click.prevent="goToStep(2)">修改稟告疏文</a>」開啟 AI 靈析。
-              </template>
-              <template v-else>
-                如欲領受 AI 結合具體事項之開示，可點擊上方「<a href="#" @click.prevent="goToStep(2)">修改稟告疏文</a>」補寫所求事項。
-              </template>
-            </span>
-          </div>
-        </div>
-        <p v-if="notice" class="notice result-notice temple-notice" role="alert">{{ notice }}</p>
-      </section>
+              <button
+                @click="nextFromStep2"
+                class="px-8 py-3.5 rounded-xl font-serif text-base font-bold bg-gradient-to-r from-[#8B0000] to-[#5C0000] border border-[#D4AF37] text-[#F3E5AB] hover:from-[#A00000] shadow-[0_0_20px_rgba(139,0,0,0.5)] transition-all cursor-pointer inline-flex items-center gap-2"
+              >
+                <span>下一步：誠心搖籤</span>
+                <ArrowRight class="w-4 h-4" />
+              </button>
+            </div>
+          </section>
+
+          <!-- Step 3: Shake Fortune Stick Cylinder (搖靈籤) -->
+          <section v-else-if="currentStep === 3" class="my-10">
+            <FortuneStickCylinder
+              :is-drawing="isDrawing"
+              :selected-deck-name="selectedDeck.name"
+              :selected-deck-count="selectedDeck.count"
+              @draw="performRitualAndDraw"
+            />
+
+            <div class="text-center my-6">
+              <button
+                @click="goToStep(2)"
+                class="px-5 py-2.5 rounded-xl text-xs font-serif border border-stone-700 text-stone-400 hover:text-stone-200 transition-all cursor-pointer"
+              >
+                ← 修改稟告疏文
+              </button>
+            </div>
+          </section>
+
+          <!-- Step 4: Oracle Slip & AI Interpretation (解佛意) -->
+          <section v-else-if="currentStep === 4 && result" ref="resultSection" class="my-10">
+            
+            <!-- Result Section Header -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 mb-8 border-b border-[#D4AF37]/30">
+              <div>
+                <span class="text-xs uppercase tracking-widest text-[#D4AF37] font-semibold">DIVINE ORACLE VERSE</span>
+                <h3 class="text-3xl md:text-4xl font-bold font-serif text-[#F3E5AB] mt-0.5">
+                  諸佛聖籤感應開示
+                </h3>
+              </div>
+
+              <button
+                @click="resetRitual"
+                class="px-5 py-2.5 rounded-xl border border-[#D4AF37]/40 bg-[#8B0000]/60 text-[#F3E5AB] text-sm font-serif hover:bg-[#8B0000] transition-all flex items-center gap-2 cursor-pointer shadow-lg"
+              >
+                <RotateCcw class="w-4 h-4 text-amber-300" />
+                <span>重新參拜求籤</span>
+              </button>
+            </div>
+
+            <!-- Layout Grid: Fortune Slip (Left) & AI Interpretation (Right) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              <!-- Left: Authentic Fortune Paper Slip (黃絹聖籤) -->
+              <div class="lg:col-span-7 glass-temple-card rounded-2xl p-6 md:p-8 border-2 border-[#D4AF37]/50 shadow-2xl relative overflow-hidden">
+                <!-- Watermark Background -->
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-stone-800/10 font-serif text-9xl font-black pointer-events-none select-none">
+                  聖籤
+                </div>
+
+                <!-- Top Meta -->
+                <div class="flex items-center justify-between text-xs text-amber-200/80 font-serif pb-4 border-b border-[#D4AF37]/20">
+                  <span>{{ selectedDeck.name }}</span>
+                  <span>{{ selectedDeck.origin }}</span>
+                </div>
+
+                <!-- Verse Number & Rating Stamp -->
+                <div class="my-6 text-center">
+                  <div class="inline-flex items-center gap-3 px-6 py-2 rounded-xl bg-[#8B0000]/80 border border-[#D4AF37] shadow-[0_0_15px_rgba(139,0,0,0.6)]">
+                    <span class="text-amber-200 font-serif text-lg font-bold">
+                      第 {{ result.number }} 籤
+                    </span>
+                    <span v-if="result.fortune" class="px-2.5 py-0.5 rounded bg-[#D4AF37] text-red-950 font-serif text-xs font-black">
+                      {{ result.fortune }}
+                    </span>
+                  </div>
+
+                  <!-- Ganzhi & Element -->
+                  <div v-if="result.ganzhi || result.element" class="mt-3 flex justify-center gap-2 text-xs font-serif">
+                    <span v-if="result.ganzhi" class="text-amber-300">【{{ result.ganzhi }}】</span>
+                    <span v-if="result.element" class="text-stone-300">五行：{{ result.element }}</span>
+                  </div>
+                </div>
+
+                <!-- Verse Poem Lines -->
+                <div class="my-8 py-6 px-4 bg-[#121212]/90 rounded-xl border border-[#D4AF37]/30 text-center font-serif">
+                  <div class="space-y-3 text-lg md:text-xl text-[#F3E5AB] font-bold tracking-widest">
+                    <p v-for="line in result.lines" :key="line" class="leading-relaxed">
+                      {{ line }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Stories (典故) -->
+                <div v-if="formattedVerseStories.length" class="my-6 pt-4 border-t border-[#D4AF37]/20">
+                  <h4 class="text-sm font-serif font-bold text-[#D4AF37] flex items-center gap-2 mb-3">
+                    <BookOpen class="w-4 h-4 text-amber-400" />
+                    <span>籤詩故事典故</span>
+                  </h4>
+                  <div class="space-y-3">
+                    <div
+                      v-for="(story, idx) in formattedVerseStories"
+                      :key="idx"
+                      class="bg-stone-900/60 p-3.5 rounded-xl border border-stone-800 text-xs leading-relaxed"
+                    >
+                      <strong class="text-amber-200 font-serif block mb-1">
+                        {{ story.title || `典故 ${idx + 1}` }}
+                      </strong>
+                      <p v-for="(line, lIdx) in story.content" :key="lIdx" class="text-stone-300 font-sans">
+                        {{ line }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Attributes Guide (諸事指引) -->
+                <div v-if="result.attributes && Object.keys(result.attributes).length" class="my-6 pt-4 border-t border-[#D4AF37]/20">
+                  <h4 class="text-sm font-serif font-bold text-[#D4AF37] flex items-center gap-2 mb-3">
+                    <Compass class="w-4 h-4 text-amber-400" />
+                    <span>諸事運勢指引</span>
+                  </h4>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div
+                      v-for="(val, key) in result.attributes"
+                      :key="key"
+                      class="bg-stone-900/80 p-2.5 rounded-lg border border-stone-800 text-xs flex justify-between items-center"
+                    >
+                      <span class="text-stone-400 font-serif">{{ key }}</span>
+                      <span class="text-amber-200 font-medium">{{ val }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Traditional Explanations (解曰) -->
+                <div v-if="result.explanations && result.explanations.length" class="my-6 pt-4 border-t border-[#D4AF37]/20">
+                  <h4 class="text-sm font-serif font-bold text-[#D4AF37] flex items-center gap-2 mb-2">
+                    <span>傳統解曰</span>
+                  </h4>
+                  <div class="text-xs text-stone-300 font-sans leading-relaxed space-y-1">
+                    <p v-for="(exp, idx) in result.explanations" :key="idx">{{ exp }}</p>
+                  </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-[#D4AF37]/20 text-center text-[11px] text-stone-500 font-serif">
+                  先觀其因，再問其果；吉中藏戒，凶中有路。
+                </div>
+              </div>
+
+              <!-- Right: AI Interpretation Panel (AI 靈析) -->
+              <div v-if="showAiPanel" class="lg:col-span-5 glass-temple-card rounded-2xl p-6 md:p-8 border border-[#D4AF37]/40 shadow-2xl">
+                <div class="flex items-center gap-2 text-xs text-[#D4AF37] font-semibold tracking-widest uppercase mb-2">
+                  <Bot class="w-4 h-4 text-amber-300" />
+                  <span>AI SACRED WISDOM</span>
+                </div>
+
+                <h4 class="text-2xl font-bold font-serif text-[#F3E5AB] mb-4">
+                  AI 佛法靈析開示
+                </h4>
+
+                <!-- User Prayer Note -->
+                <div class="bg-stone-900/80 p-3.5 rounded-xl border border-stone-800 text-xs text-amber-200/90 font-serif mb-6">
+                  <span class="text-stone-400 block text-[10px] mb-1">信士所稟疏文：</span>
+                  「{{ question.trim() || '信士心中默禱，求賜總體吉凶趨勢與行事指引' }}」
+                </div>
+
+                <!-- AI Output Content -->
+                <div v-if="aiAnswer" class="my-6 bg-[#121212]/90 p-5 rounded-xl border border-[#D4AF37]/30 text-sm text-[#F3E5AB] leading-relaxed whitespace-pre-wrap font-sans space-y-3">
+                  {{ aiAnswer }}
+                </div>
+
+                <div v-else class="my-6 text-xs text-stone-300 font-sans leading-relaxed space-y-3">
+                  <p>籤詩如鏡，映照當下心念。AI 將結合您所稟告之疏文與聖籤典故，為您提供深度開示與破局行動建議。</p>
+                  <ul class="space-y-2 text-stone-400">
+                    <li class="flex items-center gap-2"><span class="text-amber-400 font-bold">01.</span> 明辨因果趨勢</li>
+                    <li class="flex items-center gap-2"><span class="text-amber-400 font-bold">02.</span> 對照當下處境</li>
+                    <li class="flex items-center gap-2"><span class="text-amber-400 font-bold">03.</span> 賜予避坑與行動方針</li>
+                  </ul>
+                </div>
+
+                <button
+                  @click="askAi"
+                  :disabled="isInterpreting"
+                  class="w-full py-3.5 rounded-xl font-serif text-sm font-bold transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                  :class="isInterpreting
+                    ? 'bg-stone-800 text-stone-500 border border-stone-700 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-[#8B0000] to-[#5C0000] border border-[#D4AF37] text-[#F3E5AB] hover:from-[#A00000] shadow-[0_0_20px_rgba(139,0,0,0.5)]'"
+                >
+                  <Sparkles class="w-4 h-4 text-amber-300" :class="isInterpreting ? 'animate-spin' : ''" />
+                  <span>{{ isInterpreting ? '正在凝神領受聖意…' : aiAnswer ? '重新領受 AI 靈析開示' : apiKey ? '請 AI 領受聖意開示' : '設定 API 金鑰領受開示' }}</span>
+                </button>
+
+                <p v-if="notice" class="mt-4 text-xs text-red-300 bg-red-950/60 p-2.5 rounded-lg border border-red-800">
+                  {{ notice }}
+                </p>
+              </div>
+            </div>
+          </section>
+        </Transition>
+      </div>
     </main>
 
-    <footer class="temple-footer">
-      <a class="brand footer-brand" href="#" @click.prevent="resetRitual"><span class="brand-seal temple-seal">靈</span><strong>靈籤閣</strong></a>
-      <p>諸佛聖意 × 心靈寄託 ｜ 靜心參拜</p>
-      <a
-        href="http://www.chance.org.tw/%E7%B1%A4%E8%A9%A9%E9%9B%86/%E5%85%AD%E5%8D%81%E7%94%B2%E5%AD%90%E7%B1%A4/%E7%B1%A4%E8%A9%A9%E7%B6%B2%E2%80%A7%E5%85%AD%E5%8D%81%E7%94%B2%E5%AD%90%E7%B1%A4.htm"
-        target="_blank"
-        rel="noreferrer"
-      >籤文資料參考 ↗</a>
-    </footer>
-
-    <!-- API 設定彈窗 -->
-    <dialog ref="settingsDialog" class="settings-dialog temple-dialog">
-      <form method="dialog" @submit.prevent="saveSettings">
-        <div class="dialog-head">
-          <div>
-            <p class="kicker temple-kicker">AI 靈析介面設定</p>
-            <h2>AI 靈析開示設定</h2>
+    <!-- Footer Section -->
+    <footer class="relative z-10 border-t border-[#D4AF37]/20 py-8 bg-[#121212]/95 mt-16 text-center text-xs text-stone-400 font-serif">
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 border border-[#D4AF37] bg-[#8B0000] text-[#F3E5AB] flex items-center justify-center font-bold text-xs">
+            籤
           </div>
-          <button type="button" aria-label="關閉設定" @click="settingsDialog?.close()">×</button>
+          <span class="text-stone-300 font-bold">諸佛聖籤</span>
+          <span>× 傳統求籤與 AI 靈析</span>
         </div>
-        <p class="dialog-copy">
-          支援 OpenAI 相容協定之 <code>/chat/completions</code> 介面。
-          設定儲存後會安全保留於瀏覽器本機儲存 (localStorage) 中。
+
+        <p class="text-stone-500">
+          諸佛聖意 × 心靈寄託 ｜ 誠心參拜
         </p>
 
-        <div class="preset-section">
-          <span class="field-title">選擇 AI 服務商預設</span>
-          <div class="preset-chips">
+        <a
+          href="http://www.chance.org.tw/%E7%B1%A4%E8%A9%A9%E9%9B%86/%E5%85%AD%E5%8D%81%E7%94%B2%E5%AD%90%E7%B1%A4/%E7%B1%A4%E8%A9%A9%E7%B6%B2%E2%80%A7%E5%85%AD%E5%8D%81%E7%94%B2%E5%AD%90%E7%B1%A4.htm"
+          target="_blank"
+          rel="noreferrer"
+          class="text-amber-400/80 hover:text-amber-300 flex items-center gap-1 transition-colors"
+        >
+          <span>籤文典故參考資料</span>
+          <ExternalLink class="w-3 h-3" />
+        </a>
+      </div>
+    </footer>
+
+    <!-- API Settings Modal Dialog -->
+    <dialog
+      ref="settingsDialog"
+      class="bg-[#1A1A1A] text-[#F3E5AB] border-2 border-[#D4AF37] rounded-2xl p-6 md:p-8 max-w-lg w-full backdrop:bg-black/80 backdrop:backdrop-blur-sm shadow-2xl"
+    >
+      <form method="dialog" @submit.prevent="saveSettings">
+        <div class="flex items-center justify-between pb-4 border-b border-[#D4AF37]/30 mb-6">
+          <h3 class="text-xl font-bold font-serif text-[#F3E5AB] flex items-center gap-2">
+            <Settings class="w-5 h-5 text-[#D4AF37]" />
+            <span>AI 靈析服務設定</span>
+          </h3>
+          <button
+            type="button"
+            @click="settingsDialog?.close()"
+            class="text-stone-400 hover:text-stone-200 p-1 cursor-pointer"
+          >
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+
+        <p class="text-xs text-stone-300 font-sans mb-4 leading-relaxed">
+          支援 OpenAI 相容協定 API 介面。API 金鑰將安全存儲於您本地瀏覽器 (localStorage)。
+        </p>
+
+        <!-- Provider Presets -->
+        <div class="mb-4">
+          <label class="block text-xs font-serif text-amber-200 mb-2">選擇 AI 服務商預設：</label>
+          <div class="flex flex-wrap gap-2">
             <button
               v-for="preset in defaultCspPresets"
               :key="preset.id"
               type="button"
-              class="preset-chip"
-              :class="{ active: selectedPresetId === preset.id }"
               @click="applyPreset(preset)"
+              class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer"
+              :class="selectedPresetId === preset.id
+                ? 'bg-[#8B0000] text-[#F3E5AB] border-[#D4AF37]'
+                : 'bg-stone-900 text-stone-400 border-stone-800 hover:border-stone-600'"
             >
               {{ preset.name }}
             </button>
-            <span class="preset-chip disabled" :class="{ active: selectedPresetId === 'custom' }">
-              自訂網址
-            </span>
           </div>
         </div>
 
-        <div v-if="selectedPresetId === 'google'" class="free-key-callout">
-          <span class="callout-icon">💡</span>
-          <div class="callout-text">
-            <strong>Gemini 免費 API Key 申請指引：</strong>
-            <p>點此前往 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" class="free-link">Google AI Studio ↗</a> 登入即可免費建立專用 API 金鑰。</p>
-          </div>
+        <div v-if="selectedPresetId === 'google'" class="bg-amber-950/40 p-3 rounded-xl border border-amber-500/30 text-xs text-amber-200 mb-4">
+          💡 <strong>Google Gemini 免費金鑰：</strong>
+          前往 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" class="underline text-amber-300">Google AI Studio ↗</a> 即可免費申請。
         </div>
 
-        <label class="model-label">
-          <div class="model-label-head">
-            <span>API 金鑰 (API Key)</span>
+        <!-- API Key Input -->
+        <div class="mb-4">
+          <div class="flex justify-between items-center mb-1 text-xs text-amber-200 font-serif">
+            <label>API Key 金鑰：</label>
             <button
               v-if="apiKey"
               type="button"
-              class="fetch-models-btn"
               @click="clearSettings"
+              class="text-red-400 hover:underline text-[11px] cursor-pointer"
             >
               清除金鑰 🗑️
             </button>
           </div>
-          <input v-model="apiKey" type="password" autocomplete="off" :placeholder="selectedPresetId === 'google' ? 'AIzaSy…' : 'sk-…'" required>
-        </label>
-        <label>
-          <span>伺服器網址 (Base URL)</span>
-          <input v-model="baseUrl" type="url" inputmode="url" placeholder="https://api.openai.com/v1" required>
-        </label>
+          <input
+            v-model="apiKey"
+            type="password"
+            placeholder="請輸入 API 金鑰 (sk-... / AIzaSy...)"
+            required
+            class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
+          />
+        </div>
 
-        <div class="model-group">
-          <label class="model-label">
-            <div class="model-label-head">
-              <span>模型名稱</span>
-              <button
-                type="button"
-                class="fetch-models-btn"
-                :disabled="isFetchingModels || !apiKey.trim()"
-                @click="loadModels"
-              >
-                {{ isFetchingModels ? '讀取中…' : '讀取模型列表 ↻' }}
-              </button>
-            </div>
-            <select v-if="availableModels.length" v-model="model" required class="model-select">
-              <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
-            </select>
-            <input v-else v-model="model" type="text" placeholder="gpt-4o-mini / gemini-2.5-flash / deepseek-chat" required>
-          </label>
-          <p v-if="modelNotice" class="model-status" :class="{ error: modelNotice.includes('失敗') || modelNotice.includes('無法') || modelNotice.includes('請') }">
+        <!-- Base URL Input -->
+        <div class="mb-4">
+          <label class="block text-xs font-serif text-amber-200 mb-1">Base URL (伺服器網址)：</label>
+          <input
+            v-model="baseUrl"
+            type="url"
+            placeholder="https://api.openai.com/v1"
+            required
+            class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
+          />
+        </div>
+
+        <!-- Model Select / Input -->
+        <div class="mb-6">
+          <div class="flex justify-between items-center mb-1 text-xs text-amber-200 font-serif">
+            <label>選擇/輸入模型：</label>
+            <button
+              type="button"
+              @click="loadModels"
+              :disabled="isFetchingModels || !apiKey.trim()"
+              class="text-amber-400 hover:underline text-[11px] disabled:text-stone-600 cursor-pointer"
+            >
+              {{ isFetchingModels ? '讀取中…' : '連線讀取模型列表 ↻' }}
+            </button>
+          </div>
+          <select
+            v-if="availableModels.length"
+            v-model="model"
+            class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
+          >
+            <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
+          </select>
+          <input
+            v-else
+            v-model="model"
+            type="text"
+            placeholder="models/gemma-4-26b-a4b-it / gpt-4o-mini"
+            required
+            class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
+          />
+
+          <p v-if="modelNotice" class="text-[11px] mt-1.5" :class="modelNotice.includes('失敗') ? 'text-red-400' : 'text-amber-300'">
             {{ modelNotice }}
           </p>
         </div>
 
-        <button class="save-button temple-btn-primary" type="submit">儲存並返回求籤</button>
+        <!-- Save Button -->
+        <button
+          type="submit"
+          class="w-full py-3 rounded-xl bg-gradient-to-r from-[#8B0000] to-[#5C0000] border border-[#D4AF37] text-[#F3E5AB] text-sm font-serif font-bold hover:from-[#A00000] shadow-lg transition-all cursor-pointer"
+        >
+          儲存設定並返回求籤
+        </button>
       </form>
     </dialog>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+</style>
