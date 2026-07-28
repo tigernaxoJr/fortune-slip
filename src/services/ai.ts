@@ -21,16 +21,16 @@ export interface FormattedStory {
 
 export const defaultCspPresets: readonly CspPreset[] = [
   {
+    id: 'google',
+    name: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    defaultModel: 'models/gemma-4-26b-a4b-it',
+  },
+  {
     id: 'openai',
     name: 'OpenAI',
     baseUrl: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o-mini',
-  },
-  {
-    id: 'google',
-    name: 'Google Gemini',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-    defaultModel: 'gemini-2.5-flash',
   },
   {
     id: 'deepseek',

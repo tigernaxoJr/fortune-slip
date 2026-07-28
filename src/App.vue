@@ -15,9 +15,9 @@ const isInterpreting = ref(false)
 const notice = ref('')
 const aiAnswer = ref('')
 const enableAiInterpretation = ref(true)
-const apiKey = ref('')
-const baseUrl = ref(localStorage.getItem('oracle-base-url') || 'https://api.openai.com/v1')
-const model = ref(localStorage.getItem('oracle-model') || 'gpt-4o-mini')
+const apiKey = ref(localStorage.getItem('oracle-api-key') || '')
+const baseUrl = ref(localStorage.getItem('oracle-base-url') || 'https://generativelanguage.googleapis.com/v1beta/openai')
+const model = ref(localStorage.getItem('oracle-model') || 'models/gemma-4-26b-a4b-it')
 
 const fetchedModels = ref<string[]>([])
 const isFetchingModels = ref(false)
@@ -42,8 +42,8 @@ const selectedPresetId = computed(() => {
 })
 
 const presetModelsMap: Record<string, string[]> = {
+  google: ['models/gemma-4-26b-a4b-it', 'models/gemma-4-31b-it', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
   openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo', 'o1-mini', 'o3-mini'],
-  google: ['models/gemma-4-31b-it', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
   deepseek: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner'],
 }
 
@@ -145,9 +145,12 @@ async function loadModels() {
     fetchedModels.value = list
     if (list.length > 0) {
       if (selectedPresetId.value === 'google') {
-        const preferredGemma = list.find((m) => m === 'models/gemma-4-31b-it' || m === 'gemma-4-31b-it')
-        if (preferredGemma) {
-          model.value = preferredGemma
+        const preferredGemma26b = list.find((m) => m === 'models/gemma-4-26b-a4b-it' || m === 'gemma-4-26b-a4b-it')
+        const preferredGemma31b = list.find((m) => m === 'models/gemma-4-31b-it' || m === 'gemma-4-31b-it')
+        if (preferredGemma26b) {
+          model.value = preferredGemma26b
+        } else if (preferredGemma31b) {
+          model.value = preferredGemma31b
         } else if (!list.includes(model.value)) {
           model.value = list[0]
         }
@@ -168,9 +171,16 @@ function openSettings() {
 }
 
 function saveSettings() {
+  localStorage.setItem('oracle-api-key', apiKey.value.trim())
   localStorage.setItem('oracle-base-url', baseUrl.value.trim())
   localStorage.setItem('oracle-model', model.value.trim())
   settingsDialog.value?.close()
+}
+
+function clearSettings() {
+  apiKey.value = ''
+  localStorage.removeItem('oracle-api-key')
+  modelNotice.value = '已清除 API 金鑰'
 }
 
 async function askAi() {
@@ -627,7 +637,7 @@ async function askAi() {
         </div>
         <p class="dialog-copy">
           支援 OpenAI 相容協定之 <code>/chat/completions</code> 介面。
-          金鑰只保留在此分頁記憶中，關閉分頁後即自動清除。
+          設定儲存後會安全保留於瀏覽器本機儲存 (localStorage) 中。
         </p>
 
         <div class="preset-section">
@@ -657,8 +667,18 @@ async function askAi() {
           </div>
         </div>
 
-        <label>
-          <span>API 金鑰 (API Key)</span>
+        <label class="model-label">
+          <div class="model-label-head">
+            <span>API 金鑰 (API Key)</span>
+            <button
+              v-if="apiKey"
+              type="button"
+              class="fetch-models-btn"
+              @click="clearSettings"
+            >
+              清除金鑰 🗑️
+            </button>
+          </div>
           <input v-model="apiKey" type="password" autocomplete="off" :placeholder="selectedPresetId === 'google' ? 'AIzaSy…' : 'sk-…'" required>
         </label>
         <label>
