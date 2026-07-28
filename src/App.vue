@@ -27,7 +27,7 @@ const selectedId = ref<DeckId | null>(null)
 const question = ref('')
 const result = ref<OracleVerse | null>(null)
 const resultSection = ref<HTMLElement>()
-const settingsDialog = ref<HTMLDialogElement>()
+const isSettingsOpen = ref(false)
 const isDrawing = ref(false)
 const isInterpreting = ref(false)
 const notice = ref('')
@@ -156,6 +156,11 @@ function applyPreset(preset: CspPreset) {
   modelNotice.value = ''
 }
 
+function selectCustomPreset() {
+  fetchedModels.value = []
+  modelNotice.value = '已切換至自訂網址模式，可自由填寫相容 OpenAI 的 Base URL 與模型名稱'
+}
+
 async function loadModels() {
   if (!apiKey.value.trim()) {
     modelNotice.value = '請先填寫 API Key 再讀取模型列表'
@@ -190,14 +195,14 @@ async function loadModels() {
 }
 
 function openSettings() {
-  settingsDialog.value?.showModal()
+  isSettingsOpen.value = true
 }
 
 function saveSettings() {
   localStorage.setItem('oracle-api-key', apiKey.value.trim())
   localStorage.setItem('oracle-base-url', baseUrl.value.trim())
   localStorage.setItem('oracle-model', model.value.trim())
-  settingsDialog.value?.close()
+  isSettingsOpen.value = false
 }
 
 function clearSettings() {
@@ -637,131 +642,157 @@ async function askAi() {
       </div>
     </footer>
 
-    <!-- API Settings Modal Dialog -->
-    <dialog
-      ref="settingsDialog"
-      class="bg-[#1A1A1A] text-[#F3E5AB] border-2 border-[#D4AF37] rounded-2xl p-6 md:p-8 max-w-lg w-full backdrop:bg-black/80 backdrop:backdrop-blur-sm shadow-2xl"
-    >
-      <form method="dialog" @submit.prevent="saveSettings">
-        <div class="flex items-center justify-between pb-4 border-b border-[#D4AF37]/30 mb-6">
-          <h3 class="text-xl font-bold font-serif text-[#F3E5AB] flex items-center gap-2">
-            <Settings class="w-5 h-5 text-[#D4AF37]" />
-            <span>AI 靈析服務設定</span>
-          </h3>
-          <button
-            type="button"
-            @click="settingsDialog?.close()"
-            class="text-stone-400 hover:text-stone-200 p-1 cursor-pointer"
-          >
-            <X class="w-5 h-5" />
-          </button>
-        </div>
-
-        <p class="text-xs text-stone-300 font-sans mb-4 leading-relaxed">
-          支援 OpenAI 相容協定 API 介面。API 金鑰將安全存儲於您本地瀏覽器 (localStorage)。
-        </p>
-
-        <!-- Provider Presets -->
-        <div class="mb-4">
-          <label class="block text-xs font-serif text-amber-200 mb-2">選擇 AI 服務商預設：</label>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="preset in defaultCspPresets"
-              :key="preset.id"
-              type="button"
-              @click="applyPreset(preset)"
-              class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer"
-              :class="selectedPresetId === preset.id
-                ? 'bg-[#8B0000] text-[#F3E5AB] border-[#D4AF37]'
-                : 'bg-stone-900 text-stone-400 border-stone-800 hover:border-stone-600'"
-            >
-              {{ preset.name }}
-            </button>
-          </div>
-        </div>
-
-        <div v-if="selectedPresetId === 'google'" class="bg-amber-950/40 p-3 rounded-xl border border-amber-500/30 text-xs text-amber-200 mb-4">
-          💡 <strong>Google Gemini 免費金鑰：</strong>
-          前往 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" class="underline text-amber-300">Google AI Studio ↗</a> 即可免費申請。
-        </div>
-
-        <!-- API Key Input -->
-        <div class="mb-4">
-          <div class="flex justify-between items-center mb-1 text-xs text-amber-200 font-serif">
-            <label>API Key 金鑰：</label>
-            <button
-              v-if="apiKey"
-              type="button"
-              @click="clearSettings"
-              class="text-red-400 hover:underline text-[11px] cursor-pointer"
-            >
-              清除金鑰 🗑️
-            </button>
-          </div>
-          <input
-            v-model="apiKey"
-            type="password"
-            placeholder="請輸入 API 金鑰 (sk-... / AIzaSy...)"
-            required
-            class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
-          />
-        </div>
-
-        <!-- Base URL Input -->
-        <div class="mb-4">
-          <label class="block text-xs font-serif text-amber-200 mb-1">Base URL (伺服器網址)：</label>
-          <input
-            v-model="baseUrl"
-            type="url"
-            placeholder="https://api.openai.com/v1"
-            required
-            class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
-          />
-        </div>
-
-        <!-- Model Select / Input -->
-        <div class="mb-6">
-          <div class="flex justify-between items-center mb-1 text-xs text-amber-200 font-serif">
-            <label>選擇/輸入模型：</label>
-            <button
-              type="button"
-              @click="loadModels"
-              :disabled="isFetchingModels || !apiKey.trim()"
-              class="text-amber-400 hover:underline text-[11px] disabled:text-stone-600 cursor-pointer"
-            >
-              {{ isFetchingModels ? '讀取中…' : '連線讀取模型列表 ↻' }}
-            </button>
-          </div>
-          <select
-            v-if="availableModels.length"
-            v-model="model"
-            class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
-          >
-            <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
-          </select>
-          <input
-            v-else
-            v-model="model"
-            type="text"
-            placeholder="models/gemma-4-26b-a4b-it / gpt-4o-mini"
-            required
-            class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
-          />
-
-          <p v-if="modelNotice" class="text-[11px] mt-1.5" :class="modelNotice.includes('失敗') ? 'text-red-400' : 'text-amber-300'">
-            {{ modelNotice }}
-          </p>
-        </div>
-
-        <!-- Save Button -->
-        <button
-          type="submit"
-          class="w-full py-3 rounded-xl bg-gradient-to-r from-[#8B0000] to-[#5C0000] border border-[#D4AF37] text-[#F3E5AB] text-sm font-serif font-bold hover:from-[#A00000] shadow-lg transition-all cursor-pointer"
+    <!-- API Settings Modal Overlay -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="isSettingsOpen"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
         >
-          儲存設定並返回求籤
-        </button>
-      </form>
-    </dialog>
+          <!-- Backdrop -->
+          <div
+            class="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            @click="isSettingsOpen = false"
+          ></div>
+
+          <!-- Modal Window -->
+          <div
+            class="relative z-10 bg-[#1A1A1A] text-[#F3E5AB] border-2 border-[#D4AF37] rounded-2xl p-6 md:p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]"
+          >
+            <form @submit.prevent="saveSettings">
+              <div class="flex items-center justify-between pb-4 border-b border-[#D4AF37]/30 mb-6">
+                <h3 class="text-xl font-bold font-serif text-[#F3E5AB] flex items-center gap-2">
+                  <Settings class="w-5 h-5 text-[#D4AF37]" />
+                  <span>AI 靈析服務設定</span>
+                </h3>
+                <button
+                  type="button"
+                  @click="isSettingsOpen = false"
+                  class="text-stone-400 hover:text-stone-200 p-1 cursor-pointer"
+                >
+                  <X class="w-5 h-5" />
+                </button>
+              </div>
+
+              <p class="text-xs text-stone-300 font-sans mb-4 leading-relaxed">
+                支援 OpenAI 相容協定 API 介面。API 金鑰將安全存儲於您本地瀏覽器 (localStorage)。
+              </p>
+
+              <!-- Provider Presets -->
+              <div class="mb-4">
+                <label class="block text-xs font-serif text-amber-200 mb-2">選擇 AI 服務商預設：</label>
+                <div class="grid grid-cols-4 gap-1.5">
+                  <button
+                    v-for="preset in defaultCspPresets"
+                    :key="preset.id"
+                    type="button"
+                    @click="applyPreset(preset)"
+                    class="px-2 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer text-center whitespace-nowrap overflow-hidden text-ellipsis"
+                    :class="selectedPresetId === preset.id
+                      ? 'bg-[#8B0000] text-[#F3E5AB] border-[#D4AF37]'
+                      : 'bg-stone-900 text-stone-400 border-stone-800 hover:border-stone-600'"
+                  >
+                    {{ preset.name }}
+                  </button>
+
+                  <button
+                    type="button"
+                    @click="selectCustomPreset"
+                    class="px-2 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer text-center whitespace-nowrap"
+                    :class="selectedPresetId === 'custom'
+                      ? 'bg-[#8B0000] text-[#F3E5AB] border-[#D4AF37]'
+                      : 'bg-stone-900 text-stone-400 border-stone-800 hover:border-stone-600'"
+                  >
+                    自訂網址
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="selectedPresetId === 'google'" class="bg-amber-950/40 p-3 rounded-xl border border-amber-500/30 text-xs text-amber-200 mb-4">
+                💡 <strong>Google Gemini 免費金鑰：</strong>
+                前往 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" class="underline text-amber-300">Google AI Studio ↗</a> 即可免費申請。
+              </div>
+
+              <!-- API Key Input -->
+              <div class="mb-4">
+                <div class="flex justify-between items-center mb-1 text-xs text-amber-200 font-serif">
+                  <label>API Key 金鑰：</label>
+                  <button
+                    v-if="apiKey"
+                    type="button"
+                    @click="clearSettings"
+                    class="text-red-400 hover:underline text-[11px] cursor-pointer"
+                  >
+                    清除金鑰 🗑️
+                  </button>
+                </div>
+                <input
+                  v-model="apiKey"
+                  type="password"
+                  placeholder="請輸入 API 金鑰 (sk-... / AIzaSy...)"
+                  required
+                  class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
+                />
+              </div>
+
+              <!-- Base URL Input -->
+              <div class="mb-4">
+                <label class="block text-xs font-serif text-amber-200 mb-1">Base URL (伺服器網址)：</label>
+                <input
+                  v-model="baseUrl"
+                  type="url"
+                  placeholder="https://api.openai.com/v1"
+                  required
+                  class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
+                />
+              </div>
+
+              <!-- Model Select / Input -->
+              <div class="mb-6">
+                <div class="flex justify-between items-center mb-1 text-xs text-amber-200 font-serif">
+                  <label>選擇/輸入模型：</label>
+                  <button
+                    type="button"
+                    @click="loadModels"
+                    :disabled="isFetchingModels || !apiKey.trim()"
+                    class="text-amber-400 hover:underline text-[11px] disabled:text-stone-600 cursor-pointer"
+                  >
+                    {{ isFetchingModels ? '讀取中…' : '連線讀取模型列表 ↻' }}
+                  </button>
+                </div>
+                <select
+                  v-if="availableModels.length"
+                  v-model="model"
+                  class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
+                >
+                  <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
+                </select>
+                <input
+                  v-else
+                  v-model="model"
+                  type="text"
+                  placeholder="models/gemma-4-26b-a4b-it / gpt-4o-mini"
+                  required
+                  class="w-full bg-[#121212] border border-[#D4AF37]/40 rounded-xl px-3.5 py-2.5 text-xs text-[#F3E5AB] focus:outline-none focus:border-[#D4AF37]"
+                />
+
+                <p v-if="modelNotice" class="text-[11px] mt-1.5" :class="modelNotice.includes('失敗') ? 'text-red-400' : 'text-amber-300'">
+                  {{ modelNotice }}
+                </p>
+              </div>
+
+              <!-- Save Button -->
+              <button
+                type="submit"
+                class="w-full py-3 rounded-xl bg-gradient-to-r from-[#8B0000] to-[#5C0000] border border-[#D4AF37] text-[#F3E5AB] text-sm font-serif font-bold hover:from-[#A00000] shadow-lg transition-all cursor-pointer"
+              >
+                儲存設定並返回求籤
+              </button>
+            </form>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
