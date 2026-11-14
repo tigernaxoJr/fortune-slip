@@ -38,7 +38,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
 
   const particles: SmokeCloud[] = []
-  const maxParticles = 28 // Fewer, larger, silky clean clouds for premium feel
+  const maxParticles = window.innerWidth < 640 ? 16 : 26 // Fewer, larger, silky clean clouds for premium feel
 
   function createCloud(initialSpawn = false): SmokeCloud {
     const maxLife = 350 + Math.random() * 350
@@ -70,25 +70,6 @@ onMounted(() => {
   function draw() {
     if (!ctx) return
     ctx.clearRect(0, 0, width, height)
-
-    // Clean Dark Slate Background
-    ctx.fillStyle = '#121212'
-    ctx.fillRect(0, 0, width, height)
-
-    // Subtle Cinnabar Crimson Radial Ambient Vignette
-    const bgGradient = ctx.createRadialGradient(
-      width / 2,
-      height * 0.3,
-      100,
-      width / 2,
-      height * 0.5,
-      Math.max(width, height) * 0.7,
-    )
-    bgGradient.addColorStop(0, 'rgba(139, 0, 0, 0.06)')
-    bgGradient.addColorStop(1, 'rgba(18, 18, 18, 0)')
-
-    ctx.fillStyle = bgGradient
-    ctx.fillRect(0, 0, width, height)
 
     // Use 'screen' composite mode so overlapping clouds create clean ethereal light instead of muddy dark spots!
     ctx.globalCompositeOperation = 'screen'
@@ -161,7 +142,14 @@ onMounted(() => {
     animId = requestAnimationFrame(draw)
   }
 
-  draw()
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (reduceMotion) {
+    // paint a single still frame
+    draw()
+    if (animId) cancelAnimationFrame(animId)
+  } else {
+    draw()
+  }
 
   onUnmounted(() => {
     window.removeEventListener('resize', handleResize)
@@ -173,6 +161,6 @@ onMounted(() => {
 <template>
   <canvas
     ref="canvasRef"
-    class="fixed inset-0 pointer-events-none z-0 block w-full h-full"
+    class="fixed inset-0 pointer-events-none z-0 block w-full h-full opacity-90"
   />
 </template>

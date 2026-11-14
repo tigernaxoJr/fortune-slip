@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Settings, Compass, Flame } from 'lucide-vue-next'
+import { Settings } from 'lucide-vue-next'
+import BaguaRing from './BaguaRing.vue'
 
-const props = defineProps<{
+defineProps<{
   currentStep: number
   maxStepReached: number
   isStepDisabled: (step: number) => boolean
@@ -15,111 +16,105 @@ const emit = defineEmits<{
   (e: 'reset'): void
   (e: 'switch-tab', tab: 'oracle' | 'blessing'): void
 }>()
+
+const tabs = [
+  { id: 'oracle', label: '求籤解意' },
+  { id: 'blessing', label: '點燈祈福' },
+] as const
 </script>
 
 <template>
-  <header class="sticky top-0 z-40 w-full bg-[#121212]/90 backdrop-blur-md border-b border-[#D4AF37]/30 shadow-xl">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between gap-4">
-      
-      <!-- Brand Logo / Temple Seal -->
-      <div 
-        @click="emit('reset')" 
-        class="flex items-center gap-2.5 cursor-pointer group shrink-0"
-      >
-        <!-- Square Temple Seal Stamp Logo -->
-        <div class="w-9 h-9 md:w-11 md:h-11 border-2 border-[#D4AF37] bg-[#8B0000] rounded-sm flex items-center justify-center text-[#F3E5AB] font-serif font-black text-lg md:text-xl shadow-[0_0_15px_rgba(139,0,0,0.6)] group-hover:scale-105 transition-transform">
-          籤
-        </div>
-        <div>
-          <h1 class="text-lg md:text-xl font-bold font-serif text-temple-gold tracking-wide">
-            靈籤閣
-          </h1>
-          <p class="hidden sm:block text-[9px] text-stone-400 font-sans tracking-widest uppercase">
-            Sacred Temple Oracle
-          </p>
-        </div>
-      </div>
+  <header class="sticky top-0 z-40 w-full">
+    <div class="absolute inset-0 bg-ink/80 backdrop-blur-xl"></div>
+    <div class="absolute inset-x-0 bottom-0 rule-gold opacity-60"></div>
 
-      <!-- Main Dual Tab Switcher (虔誠求籤解意 VS 線上點燈與立香) -->
-      <div class="flex items-center p-1 rounded-xl bg-[#1A1A1A]/90 border border-[#D4AF37]/30 shadow-inner shrink-0">
-        <button
-          @click="emit('switch-tab', 'oracle')"
-          class="px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-serif font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
-          :class="activeMainTab === 'oracle'
-            ? 'bg-[#8B0000] text-[#F3E5AB] border border-[#D4AF37] shadow-[0_0_12px_rgba(212,175,55,0.4)]'
-            : 'text-stone-400 hover:text-stone-200'"
-        >
-          <Compass class="w-3.5 h-3.5 text-amber-400" />
-          <span>求籤解意</span>
-        </button>
-        <button
-          @click="emit('switch-tab', 'blessing')"
-          class="px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-serif font-bold transition-all duration-300 flex items-center gap-1.5 cursor-pointer"
-          :class="activeMainTab === 'blessing'
-            ? 'bg-[#8B0000] text-[#F3E5AB] border border-[#D4AF37] shadow-[0_0_12px_rgba(212,175,55,0.4)]'
-            : 'text-stone-400 hover:text-stone-200'"
-        >
-          <Flame class="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-          <span>線上點燈祈福</span>
-        </button>
-      </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-[72px] flex items-center justify-between gap-3">
+      <!-- brand -->
+      <button type="button" @click="emit('reset')" class="flex items-center gap-3 group shrink-0 cursor-pointer">
+        <div class="relative w-10 h-10 md:w-11 md:h-11 transition-transform duration-700 group-hover:rotate-45">
+          <BaguaRing :size="44" :show-names="false" :spin="false" class="w-full h-full" />
+        </div>
+        <div class="text-left">
+          <h1 class="font-serif font-black text-xl md:text-2xl tracking-[0.25em] text-gold-leaf leading-none">靈籤閣</h1>
+          <p class="hidden sm:block font-cinzel text-[9px] tracking-[0.35em] text-mist mt-1.5">TAOIST ORACLE HALL</p>
+        </div>
+      </button>
 
-      <!-- Step Navigation Indicator (Desktop) -->
-      <nav v-if="activeMainTab === 'oracle'" class="hidden lg:flex items-center gap-2">
+      <!-- tabs -->
+      <nav class="flex items-center gap-1 sm:gap-6 shrink-0" aria-label="主選單">
         <button
-          v-for="s in steps"
-          :key="s.num"
-          @click="emit('go-step', s.num as 1|2|3|4)"
-          :disabled="isStepDisabled(s.num)"
-          class="px-3 py-1.5 rounded-lg text-xs font-serif transition-all duration-300 flex items-center gap-1.5 border cursor-pointer"
-          :class="currentStep === s.num
-            ? 'bg-[#8B0000]/90 text-[#F3E5AB] border-[#D4AF37] shadow-[0_0_12px_rgba(212,175,55,0.35)]'
-            : isStepDisabled(s.num)
-              ? 'bg-transparent text-stone-600 border-transparent cursor-not-allowed'
-              : 'bg-stone-900/60 text-stone-300 border-stone-800 hover:border-[#D4AF37]/50 hover:text-[#F3E5AB]'"
+          v-for="t in tabs"
+          :key="t.id"
+          type="button"
+          @click="emit('switch-tab', t.id)"
+          class="relative px-2 py-2 font-serif text-sm md:text-[15px] tracking-[0.2em] transition-colors cursor-pointer"
+          :class="activeMainTab === t.id ? 'text-gold-bright' : 'text-mist hover:text-parchment'"
         >
-          <span 
-            class="w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center"
-            :class="currentStep === s.num ? 'bg-[#D4AF37] text-[#121212]' : 'bg-stone-800 text-stone-400'"
-          >
-            {{ s.symbol }}
-          </span>
-          <span>{{ s.label }}</span>
+          {{ t.label }}
+          <span
+            class="absolute left-1/2 -bottom-0.5 h-[2px] -translate-x-1/2 bg-cinnabar-bright transition-all duration-500"
+            :class="activeMainTab === t.id ? 'w-6' : 'w-0'"
+          ></span>
         </button>
       </nav>
 
-      <!-- Settings & Action Button -->
-      <div class="flex items-center gap-2 shrink-0">
-        <button
-          @click="emit('open-settings')"
-          class="p-2 rounded-xl border border-[#D4AF37]/30 text-stone-300 hover:text-[#F3E5AB] hover:border-[#D4AF37] bg-stone-900/80 hover:bg-[#8B0000]/30 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-medium"
-          title="設定 AI 靈析 API 金鑰"
-        >
-          <Settings class="w-4 h-4 text-[#D4AF37]" />
-          <span class="hidden xl:inline">AI 設定</span>
-        </button>
-      </div>
-    </div>
+      <!-- step progress (desktop) -->
+      <ol v-if="activeMainTab === 'oracle'" class="hidden lg:flex items-center">
+        <li v-for="(s, i) in steps" :key="s.num" class="flex items-center">
+          <button
+            type="button"
+            @click="emit('go-step', s.num as 1 | 2 | 3 | 4)"
+            :disabled="isStepDisabled(s.num)"
+            class="flex items-center gap-2 px-1.5 py-1 font-serif text-xs tracking-[0.15em] transition-colors disabled:cursor-not-allowed cursor-pointer"
+            :class="currentStep === s.num ? 'text-parchment' : isStepDisabled(s.num) ? 'text-smoke/60' : 'text-mist hover:text-parchment'"
+          >
+            <span
+              class="w-6 h-6 flex items-center justify-center text-[11px] font-bold rotate-45 border transition-all duration-500"
+              :class="currentStep === s.num
+                ? 'bg-cinnabar border-gold-bright text-gold-bright shadow-[0_0_14px_rgba(210,58,38,0.6)]'
+                : s.num < currentStep || (!isStepDisabled(s.num) && s.num <= maxStepReached)
+                  ? 'border-gold/60 text-gold'
+                  : 'border-smoke/40 text-smoke/70'"
+            >
+              <span class="-rotate-45">{{ s.symbol }}</span>
+            </span>
+            <span>{{ s.label }}</span>
+          </button>
+          <span v-if="i < steps.length - 1" class="w-5 h-px mx-1" :class="s.num < maxStepReached ? 'bg-gold/50' : 'bg-smoke/30'"></span>
+        </li>
+      </ol>
 
-    <!-- Mobile Step Navigation Bar (Only for Oracle tab) -->
-    <div v-if="activeMainTab === 'oracle'" class="lg:hidden flex items-center justify-around px-2 py-1.5 border-t border-[#D4AF37]/20 bg-[#1A1A1A]/95">
       <button
-        v-for="s in steps"
-        :key="s.num"
-        @click="emit('go-step', s.num as 1|2|3|4)"
-        :disabled="isStepDisabled(s.num)"
-        class="px-2 py-0.5 text-xs font-serif flex items-center gap-1.5 rounded transition-all cursor-pointer"
-        :class="currentStep === s.num
-          ? 'text-[#D4AF37] font-bold'
-          : isStepDisabled(s.num)
-            ? 'text-stone-600 cursor-not-allowed'
-            : 'text-stone-400'"
+        type="button"
+        @click="emit('open-settings')"
+        class="btn-ghost !p-2.5 shrink-0"
+        title="AI 神諭設定"
+        aria-label="AI 神諭設定"
       >
-        <span class="w-4 h-4 rounded-full text-[10px] flex items-center justify-center font-bold" :class="currentStep === s.num ? 'bg-[#8B0000] text-[#D4AF37] border border-[#D4AF37]' : 'bg-stone-800'">
-          {{ s.symbol }}
-        </span>
-        <span>{{ s.label }}</span>
+        <Settings class="w-4 h-4" />
       </button>
     </div>
+
+    <!-- step progress (mobile) -->
+    <ol
+      v-if="activeMainTab === 'oracle'"
+      class="relative lg:hidden flex items-center justify-between max-w-md mx-auto px-5 pb-2.5 pt-1"
+    >
+      <li v-for="s in steps" :key="s.num">
+        <button
+          type="button"
+          @click="emit('go-step', s.num as 1 | 2 | 3 | 4)"
+          :disabled="isStepDisabled(s.num)"
+          class="flex items-center gap-1.5 font-serif text-[12px] tracking-widest disabled:cursor-not-allowed"
+          :class="currentStep === s.num ? 'text-gold-bright' : isStepDisabled(s.num) ? 'text-smoke/60' : 'text-mist'"
+        >
+          <span
+            class="w-1.5 h-1.5 rotate-45"
+            :class="currentStep === s.num ? 'bg-cinnabar-bright shadow-[0_0_8px_#d23a26]' : 'bg-current opacity-60'"
+          ></span>
+          {{ s.label }}
+        </button>
+      </li>
+    </ol>
   </header>
 </template>

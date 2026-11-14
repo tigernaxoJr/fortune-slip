@@ -1,223 +1,232 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Flame, Sparkles, HeartHandshake, Check } from 'lucide-vue-next'
+import { Flame, Send } from 'lucide-vue-next'
+import { ASSETS } from '../assets'
 
-export interface LampItem {
+interface LampItem {
   id: string
   name: string
   deity: string
   benefit: string
-  color: string
+  glow: string
 }
 
 const lampTypes: LampItem[] = [
-  { id: 'guangming', name: '光明燈', deity: '天官大帝', benefit: '照耀前程・破除陰霾・智慧開朗', color: '#FFB703' },
-  { id: 'taisui', name: '太歲燈', deity: '值年太歲星君', benefit: '安奉太歲・消災解厄・趨吉避兇', color: '#E63946' },
-  { id: 'wenchang', name: '文昌燈', deity: '文昌帝君', benefit: '考運亨通・金榜題名・仕途順遂', color: '#3A86EF' },
-  { id: 'caishen', name: '財神燈', deity: '五路財神', benefit: '財源廣進・事業興旺・利路通達', color: '#FB8500' },
+  { id: 'guangming', name: '光明燈', deity: '天官大帝', benefit: '照耀前程 ・ 破除陰霾', glow: '255, 196, 92' },
+  { id: 'taisui', name: '太歲燈', deity: '值年太歲星君', benefit: '安奉太歲 ・ 消災解厄', glow: '236, 84, 58' },
+  { id: 'wenchang', name: '文昌燈', deity: '文昌帝君', benefit: '考運亨通 ・ 金榜題名', glow: '120, 180, 255' },
+  { id: 'caishen', name: '財神燈', deity: '五路財神', benefit: '財源廣進 ・ 利路通達', glow: '255, 150, 60' },
 ]
 
 const litLamps = ref<Set<string>>(new Set(['guangming']))
-const isIncenseLit = ref<boolean>(true)
-const incenseCount = ref<number>(3)
-const customWish = ref<string>('')
-const wishSaved = ref<boolean>(false)
+const isIncenseLit = ref(true)
+const customWish = ref('')
+const burningWish = ref('')
+const wishSaved = ref(false)
+const lampImageOk = ref(true)
 
 function toggleLamp(id: string) {
   const next = new Set(litLamps.value)
-  if (next.has(id)) {
-    next.delete(id)
-  } else {
-    next.add(id)
-  }
+  next.has(id) ? next.delete(id) : next.add(id)
   litLamps.value = next
 }
 
 function lightAllLamps() {
-  litLamps.value = new Set(lampTypes.map(l => l.id))
-}
-
-function toggleIncense() {
-  isIncenseLit.value = !isIncenseLit.value
+  litLamps.value = new Set(lampTypes.map((l) => l.id))
 }
 
 function saveWish() {
   if (!customWish.value.trim()) return
+  burningWish.value = customWish.value.trim()
+  customWish.value = ''
   wishSaved.value = true
-  setTimeout(() => {
+  isIncenseLit.value = true
+  window.setTimeout(() => {
     wishSaved.value = false
-  }, 2500)
+    burningWish.value = ''
+  }, 3200)
 }
 </script>
 
 <template>
-  <div class="glass-temple-card rounded-2xl p-6 md:p-8 max-w-4xl mx-auto my-8 border border-[#D4AF37]/30 shadow-2xl relative overflow-hidden">
-    <!-- Traditional Ornamental Background Pattern -->
-    <div class="absolute -top-16 -right-16 w-48 h-48 bg-[#8B0000]/15 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none"></div>
-
-    <!-- Header Title -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#D4AF37]/20">
-      <div>
-        <div class="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#D4AF37] font-semibold mb-1">
-          <Sparkles class="w-4 h-4 text-[#D4AF37]" />
-          <span>BLESSING SYSTEM ・ 誠心祈福</span>
-        </div>
-        <h3 class="text-2xl md:text-3xl font-bold font-serif text-[#F3E5AB] flex items-center gap-3">
-          線上點燈與立香祈福
-        </h3>
-      </div>
-      
-      <div class="flex items-center gap-3">
-        <button
-          @click="toggleIncense"
-          class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center gap-2 border cursor-pointer"
-          :class="isIncenseLit 
-            ? 'bg-[#8B0000]/80 text-[#F3E5AB] border-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.4)]' 
-            : 'bg-stone-900/80 text-stone-400 border-stone-700 hover:border-stone-500'"
-        >
-          <Flame class="w-4 h-4" :class="isIncenseLit ? 'text-amber-400 animate-pulse' : 'text-stone-500'" />
-          <span>{{ isIncenseLit ? '清香正燃 (點香中)' : '點燃三柱清香' }}</span>
-        </button>
-
-        <button
-          @click="lightAllLamps"
-          class="px-4 py-2 rounded-xl text-sm font-medium border border-[#D4AF37]/50 text-[#F3E5AB] bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 hover:border-[#D4AF37] transition-all flex items-center gap-2 cursor-pointer"
-        >
-          <Sparkles class="w-4 h-4 text-[#D4AF37]" />
-          <span>全殿光明點亮</span>
-        </button>
-      </div>
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-12">
+      <p class="eyebrow">Lamps &amp; Incense</p>
+      <h3 class="font-serif font-bold text-3xl md:text-4xl text-gold-leaf mt-3 tracking-[0.2em] pl-[0.2em]">點燈祈福</h3>
+      <p class="text-sm text-mist mt-3 tracking-[0.15em]">一爐清香達天聽 ・ 一盞明燈照前程</p>
     </div>
 
-    <!-- Main Content Area: Incense Altar & Lamp Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 my-8 items-stretch">
-      
-      <!-- Left Column: Traditional Incense Burner (立香區) -->
-      <div class="lg:col-span-5 bg-[#121212]/90 rounded-xl p-6 border border-[#D4AF37]/20 flex flex-col justify-between items-center text-center relative">
-        <span class="text-xs tracking-widest text-amber-200/60 font-serif mb-2">【 鼎香煙繚 誠心叩拜 】</span>
-        
-        <!-- Incense Burner & Flames -->
-        <div class="my-6 relative flex flex-col items-center justify-end h-48 w-full">
-          <!-- Rising Smoke Layer -->
-          <div v-if="isIncenseLit" class="absolute bottom-32 flex justify-center gap-4 w-full pointer-events-none">
-            <div v-for="n in incenseCount" :key="n" class="w-1.5 h-16 bg-gradient-to-t from-amber-400/40 via-stone-300/20 to-transparent rounded-full animate-incense-smoke" :style="{ animationDelay: `${n * 0.4}s` }"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <!-- 香爐 -->
+      <div class="lg:col-span-5 lacquer corners p-6 flex flex-col items-center text-center">
+        <span class="font-serif text-xs tracking-[0.4em] text-gold">天公爐</span>
+
+        <div class="relative w-full h-72 flex items-end justify-center mt-2">
+          <!-- burning petition rising -->
+          <Transition name="fade">
+            <p
+              v-if="burningWish"
+              class="wish-burn absolute bottom-40 left-1/2 -translate-x-1/2 w-56 font-brush text-sm leading-6 text-gold-bright/90"
+            >{{ burningWish }}</p>
+          </Transition>
+
+          <!-- smoke -->
+          <div v-if="isIncenseLit" class="absolute bottom-[184px] left-1/2 -translate-x-1/2 flex gap-5 pointer-events-none">
+            <span
+              v-for="n in 3"
+              :key="n"
+              class="block w-2 h-20 rounded-full bg-gradient-to-t from-[#d9cbb0]/50 via-[#d9cbb0]/15 to-transparent blur-[3px] animate-incense-smoke"
+              :style="{ animationDelay: `${n * 0.9}s` }"
+            ></span>
           </div>
 
-          <!-- Incense Sticks -->
-          <div class="flex justify-center gap-3 items-end mb-1">
-            <div v-for="n in incenseCount" :key="n" class="relative flex flex-col items-center">
-              <!-- Ember Glow Wick -->
-              <div 
-                v-if="isIncenseLit" 
-                class="w-2 h-2.5 rounded-full bg-amber-400 animate-candle-flicker mb-0.5 shadow-[0_0_12px_#FF9900]"
-                :style="{ animationDelay: `${n * 0.3}s` }"
-              ></div>
-              <div v-else class="w-1.5 h-2 bg-stone-600 mb-0.5"></div>
-              <!-- Stick Body -->
-              <div class="w-1 h-28 bg-gradient-to-b from-amber-900 via-amber-800 to-amber-950 rounded-t-sm border-x border-amber-700/50"></div>
-            </div>
-          </div>
-
-          <!-- Bronze Incense Burner Container -->
-          <div class="w-36 h-16 bg-gradient-to-r from-[#3A2810] via-[#634823] to-[#2B1B0A] rounded-b-2xl rounded-t-sm border-2 border-[#D4AF37]/50 shadow-[0_10px_25px_rgba(0,0,0,0.8)] relative flex items-center justify-center">
-            <div class="w-28 h-2 border-b border-[#D4AF37]/30 absolute top-2"></div>
-            <div class="w-10 h-10 rounded-full border border-[#D4AF37]/40 flex items-center justify-center text-[#D4AF37] font-serif text-xs font-bold bg-black/40">
-              香鼎
-            </div>
-          </div>
+          <svg viewBox="0 0 220 220" class="relative w-56 h-56" aria-hidden="true">
+            <defs>
+              <linearGradient id="bronze" x1="0" x2="1">
+                <stop offset="0" stop-color="#2a1b0c" />
+                <stop offset="0.3" stop-color="#7a5a2c" />
+                <stop offset="0.42" stop-color="#c9a45c" />
+                <stop offset="0.6" stop-color="#6a4b22" />
+                <stop offset="1" stop-color="#1e1308" />
+              </linearGradient>
+              <radialGradient id="ember">
+                <stop offset="0" stop-color="#fff1c2" />
+                <stop offset="0.4" stop-color="#ff9a3c" />
+                <stop offset="1" stop-color="#ff5a1f" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+            <!-- incense sticks -->
+            <g v-for="(x, i) in [88, 110, 132]" :key="x">
+              <rect :x="x - 1.4" :y="34 + (i === 1 ? -6 : 0)" width="2.8" height="86" fill="#8a3a1a" />
+              <rect :x="x - 1.4" :y="100 + (i === 1 ? -6 : 0)" width="2.8" height="20" fill="#c23b22" />
+              <circle
+                v-if="isIncenseLit"
+                :cx="x"
+                :cy="34 + (i === 1 ? -6 : 0)"
+                r="6"
+                fill="url(#ember)"
+                class="animate-candle-flicker"
+                :style="{ animationDelay: `${i * 0.4}s`, transformOrigin: `${x}px ${34 + (i === 1 ? -6 : 0)}px` }"
+              />
+              <circle v-else :cx="x" :cy="34 + (i === 1 ? -6 : 0)" r="1.6" fill="#3a2a1a" />
+            </g>
+            <!-- 鼎 handles -->
+            <path d="M48 118 q-14 -2 -14 -18 q0 -8 8 -8" fill="none" stroke="url(#bronze)" stroke-width="6" stroke-linecap="round" />
+            <path d="M172 118 q14 -2 14 -18 q0 -8 -8 -8" fill="none" stroke="url(#bronze)" stroke-width="6" stroke-linecap="round" />
+            <!-- body -->
+            <ellipse cx="110" cy="118" rx="66" ry="10" fill="#4a3216" />
+            <path d="M44 118 Q46 176 110 180 Q174 176 176 118 Z" fill="url(#bronze)" />
+            <ellipse cx="110" cy="118" rx="62" ry="7" fill="#140b05" />
+            <!-- ash -->
+            <ellipse cx="110" cy="119" rx="56" ry="4.5" fill="#6d665c" opacity="0.7" />
+            <!-- legs -->
+            <path d="M68 172 L60 204 L72 204 L80 176 Z M152 172 L160 204 L148 204 L140 176 Z M104 180 L104 206 L116 206 L116 180 Z" fill="url(#bronze)" />
+            <!-- 回紋 band -->
+            <path
+              d="M58 136 h8 v6 h-5 v-3 M74 138 h8 v6 h-5 v-3 M90 139 h8 v6 h-5 v-3 M106 139.5 h8 v6 h-5 v-3 M122 139 h8 v6 h-5 v-3 M138 138 h8 v6 h-5 v-3 M154 136 h8 v6 h-5 v-3"
+              fill="none" stroke="#ecd294" stroke-opacity="0.6" stroke-width="0.8"
+            />
+            <text x="110" y="160" text-anchor="middle" font-family="Noto Serif TC, serif" font-weight="900" font-size="15" fill="#ecd294" fill-opacity="0.85" letter-spacing="4">天公爐</text>
+          </svg>
         </div>
 
-        <p class="text-xs text-stone-300 font-sans leading-relaxed">
-          {{ isIncenseLit ? '一爐真香，達信神明。靜心凝神，誠懇稟明所祈求之事。' : '點燃爐香，靈煙直達九霄，福佑心願所成。' }}
+        <p class="text-sm text-mist leading-7 mt-2 min-h-14">
+          {{ isIncenseLit ? '香煙裊裊，上達天聽。靜心凝神，稟明所祈。' : '點燃三炷清香，敬天、敬神、敬祖。' }}
         </p>
+
+        <button type="button" @click="isIncenseLit = !isIncenseLit" class="btn-ghost mt-4">
+          <Flame class="w-4 h-4" :class="isIncenseLit ? 'text-[#ff9a3c]' : ''" />
+          <span>{{ isIncenseLit ? '清香正燃' : '點燃三炷清香' }}</span>
+        </button>
       </div>
 
-      <!-- Right Column: Lamp Grid (光明燈 / 太歲燈 / 文昌燈 / 財神燈) -->
-      <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div
-          v-for="lamp in lampTypes"
-          :key="lamp.id"
-          @click="toggleLamp(lamp.id)"
-          class="rounded-xl p-5 border transition-all duration-300 cursor-pointer relative overflow-hidden flex flex-col justify-between"
-          :class="litLamps.has(lamp.id)
-            ? 'bg-gradient-to-b from-[#2A1616] to-[#160D0D] border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.25)]'
-            : 'bg-stone-900/60 border-stone-800/80 hover:border-stone-700 opacity-75 hover:opacity-100'"
-        >
-          <!-- Active Glow Accent -->
-          <div 
-            v-if="litLamps.has(lamp.id)" 
-            class="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-xl pointer-events-none"
-          ></div>
+      <!-- 燈 -->
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+          <button
+            v-for="lamp in lampTypes"
+            :key="lamp.id"
+            type="button"
+            @click="toggleLamp(lamp.id)"
+            :aria-pressed="litLamps.has(lamp.id)"
+            class="lacquer lacquer-interactive text-left p-5 overflow-hidden flex items-center gap-5"
+            :class="litLamps.has(lamp.id) ? 'lacquer-selected' : 'opacity-80 hover:opacity-100'"
+          >
+            <!-- lamp glow -->
+            <div
+              class="absolute -left-10 top-1/2 -translate-y-1/2 w-44 h-44 rounded-full blur-2xl pointer-events-none transition-opacity duration-700"
+              :style="{ background: `radial-gradient(circle, rgba(${lamp.glow}, .35), transparent 70%)` }"
+              :class="litLamps.has(lamp.id) ? 'opacity-100' : 'opacity-0'"
+            ></div>
 
-          <!-- Top Row: Flame Icon & Candle Lamp -->
-          <div class="flex items-start justify-between mb-3">
-            <div class="flex items-center gap-3">
-              <!-- Candle Lamp Graphic -->
-              <div class="relative w-9 h-12 flex flex-col items-center justify-end">
-                <!-- Candle Flame -->
-                <div
-                  v-if="litLamps.has(lamp.id)"
-                  class="w-4 h-6 rounded-full bg-gradient-to-t from-amber-500 via-yellow-300 to-white animate-candle-flicker mb-1 shadow-[0_0_15px_#FFB703]"
-                ></div>
-                <div v-else class="w-1.5 h-3 bg-stone-600 rounded-t-full mb-1"></div>
-                
-                <!-- Candle Base Holder -->
-                <div class="w-7 h-5 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-900 rounded-sm border border-[#D4AF37]/40"></div>
-              </div>
-
-              <div>
-                <h4 class="font-serif text-lg font-bold text-[#F3E5AB]">
-                  {{ lamp.name }}
-                </h4>
-                <p class="text-xs text-stone-400 font-sans">
-                  奉祀：{{ lamp.deity }}
-                </p>
-              </div>
+            <div class="relative w-16 h-20 shrink-0 flex items-end justify-center">
+              <img
+                v-if="lampImageOk"
+                :src="ASSETS.lotusLamp"
+                alt=""
+                @error="lampImageOk = false"
+                class="w-16 h-16 object-contain transition-[filter] duration-700"
+                :class="litLamps.has(lamp.id) ? '' : 'grayscale brightness-50'"
+              />
+              <template v-else>
+                <!-- fallback: oil lamp -->
+                <svg viewBox="0 0 64 80" class="w-16 h-20">
+                  <g v-if="litLamps.has(lamp.id)" class="animate-candle-flicker" style="transform-origin: 32px 46px">
+                    <ellipse cx="32" cy="34" rx="10" ry="16" :fill="`rgba(${lamp.glow}, .25)`" />
+                    <path d="M32 18 C38 30 38 40 32 46 C26 40 26 30 32 18 Z" fill="#ffd27a" />
+                    <path d="M32 28 C35 35 35 41 32 45 C29 41 29 35 32 28 Z" fill="#fff6dc" />
+                  </g>
+                  <line x1="32" y1="44" x2="32" y2="50" stroke="#2a1a10" stroke-width="1.5" />
+                  <path d="M12 50 Q32 46 52 50 Q50 62 32 64 Q14 62 12 50 Z" fill="#a8843f" />
+                  <path d="M12 50 Q32 54 52 50" fill="none" stroke="#ecd294" stroke-width="1" />
+                  <path d="M26 64 L22 76 L42 76 L38 64 Z" fill="#7a5a2c" />
+                </svg>
+              </template>
             </div>
 
-            <div 
-              class="w-6 h-6 rounded-full border flex items-center justify-center transition-all"
-              :class="litLamps.has(lamp.id) ? 'bg-[#8B0000] border-[#D4AF37] text-[#D4AF37]' : 'border-stone-700 text-transparent'"
-            >
-              <Check class="w-3.5 h-3.5 stroke-[3]" />
+            <div class="relative min-w-0">
+              <h4 class="font-serif font-bold text-lg text-parchment tracking-[0.15em]">{{ lamp.name }}</h4>
+              <p class="text-xs text-smoke mt-0.5 tracking-wider">奉祀 {{ lamp.deity }}</p>
+              <p class="text-[13px] text-mist mt-3 font-brush tracking-wider">{{ lamp.benefit }}</p>
+              <p class="text-[11px] mt-2 tracking-[0.2em]" :class="litLamps.has(lamp.id) ? 'text-gold' : 'text-smoke'">
+                {{ litLamps.has(lamp.id) ? '燈火長明' : '點此安燈' }}
+              </p>
             </div>
-          </div>
-
-          <!-- Benefit Description -->
-          <p class="text-xs text-stone-300/90 font-sans mt-2 pt-2 border-t border-stone-800">
-            {{ lamp.benefit }}
-          </p>
-
-          <!-- Status Indicator Tag -->
-          <div class="mt-3 flex items-center justify-between text-[11px]">
-            <span :class="litLamps.has(lamp.id) ? 'text-amber-400 font-medium' : 'text-stone-500'">
-              {{ litLamps.has(lamp.id) ? '● 燭火高照・吉星庇佑' : '○ 點擊開燈安奉' }}
-            </span>
-          </div>
+          </button>
         </div>
+
+        <button type="button" @click="lightAllLamps" class="btn-ghost justify-center">
+          <span>全殿點燈</span>
+        </button>
       </div>
     </div>
 
-    <!-- Bottom Wish Input Area -->
-    <div class="mt-6 pt-6 border-t border-[#D4AF37]/20 flex flex-col md:flex-row items-center gap-4">
-      <div class="relative flex-1 w-full">
-        <input
-          v-model="customWish"
-          type="text"
-          placeholder="寫下祈福心願疏文（例：求求家人平安健康、學業事業順利...）"
-          class="w-full bg-[#121212]/90 border border-[#D4AF37]/30 rounded-xl px-4 py-3 text-sm text-[#F3E5AB] placeholder-stone-500 focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all font-sans"
-          @keyup.enter="saveWish"
-        />
-      </div>
-
-      <button
-        @click="saveWish"
-        class="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-[#8B0000] to-[#5C0000] hover:from-[#A00000] hover:to-[#700000] border border-[#D4AF37] rounded-xl text-[#F3E5AB] text-sm font-semibold flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(139,0,0,0.4)] transition-all cursor-pointer"
-      >
-        <HeartHandshake class="w-4 h-4 text-amber-300" />
-        <span>{{ wishSaved ? '疏文已呈遞神明 ✓' : '稟告呈遞心願' }}</span>
+    <!-- 疏文 -->
+    <form class="lacquer corners mt-6 p-5 flex flex-col md:flex-row items-stretch gap-4" @submit.prevent="saveWish">
+      <label for="wish" class="sr-only">祈福疏文</label>
+      <input
+        id="wish"
+        v-model="customWish"
+        type="text"
+        maxlength="80"
+        placeholder="寫下祈福心願（例：願家人平安康健，學業事業順遂）"
+        class="field flex-1 font-brush !text-base"
+      />
+      <button type="submit" class="btn-cinnabar shrink-0 !py-3">
+        <Send class="w-4 h-4" />
+        <span>{{ wishSaved ? '疏文已焚化上達' : '焚疏上達' }}</span>
       </button>
-    </div>
+    </form>
   </div>
 </template>
+
+<style scoped>
+.wish-burn {
+  animation: burnUp 3.2s ease-in forwards;
+}
+@keyframes burnUp {
+  0% { opacity: 0; transform: translate(-50%, 20px); filter: blur(0); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -120px) scale(0.9); filter: blur(6px); color: #ff9a3c; }
+}
+</style>
