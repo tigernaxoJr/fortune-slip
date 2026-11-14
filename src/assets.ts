@@ -14,6 +14,7 @@ export const ASSETS = {
   lotusLamp: assetUrl('lamp-lotus.webp'),
   shrineAltar: assetUrl('bg-shrine-altar.webp'),
   smokeWisp: assetUrl('smoke-wisp.webp'),
+  censer: assetUrl('censer-tiangong.webp'),
 } as const
 
 /** CSS custom-property value for an optional background layer. */

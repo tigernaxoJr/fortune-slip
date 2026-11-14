@@ -186,3 +186,18 @@ A sheet of thin paper catching fire in a metal incense burner, soft whoosh of ig
 ```
 Ambience of a quiet Taiwanese Taoist temple hall at night, soft room tone of a large wooden hall, very faint distant wind chimes moving in a light breeze, occasional far-away wooden fish (muyu) tap, gentle crackle of candles, distant crickets outside, extremely calm and sacred, no music, no chanting voices, no footsteps, seamless loop
 ```
+
+---
+
+# 追加圖片
+
+## 11. `censer-tiangong.webp` — 天公爐（點燈祈福主角）
+
+- 尺寸：1024 × 1024，**純白無縫背景**（我會自動去背）或透明 PNG
+- 用途：取代目前程式畫的香爐。**爐內不要插香**：三炷香、香頭火光、煙由程式疊上去，才能切換「點香／未點」。
+- 構圖：正面、視角略高於爐口，**爐口要看得到一點橢圓開口**（讓香插得進去），爐體置中、上下左右留約 8% 邊界。
+
+```
+A traditional Taiwanese temple Tian Gong incense burner (tiangong lu), large antique bronze ding tripod censer with a wide round mouth, two upright loop handles on the rim, three sturdy legs shaped like lion-dog (shishi) heads with paws, body cast with coiling dragons and auspicious clouds in relief, dark aged bronze with warm gold highlights on raised edges and a subtle verdigris patina, mouth filled with grey incense ash, front view from slightly above so the oval opening is visible, centered, isolated on a pure seamless white background, soft studio lighting with warm rim light, photorealistic product render, no incense sticks, no smoke, no fire, no text, no characters
+```
+Negative：`incense sticks, smoke, flame, text, chinese characters, inscription, calligraphy, background, table, shadow on floor, people, hands, cartoon, low detail`

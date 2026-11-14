@@ -26,6 +26,13 @@ const burningWish = ref('')
 const wishSaved = ref(false)
 const lampImageOk = ref(true)
 const smokeImageOk = ref(true)
+const censerOk = ref(true)
+// stick positions in the censer image's 640-wide coordinate space (ash surface ≈ y 105)
+const censerSticks = [
+  { x: 272, top: -96, base: 112 },
+  { x: 320, top: -116, base: 106 },
+  { x: 368, top: -96, base: 112 },
+]
 
 function toggleIncense() {
   isIncenseLit.value = !isIncenseLit.value
@@ -74,7 +81,7 @@ function saveWish() {
       <div class="lg:col-span-5 lacquer corners p-6 flex flex-col items-center text-center">
         <span class="font-serif text-xs tracking-[0.4em] text-gold">天公爐</span>
 
-        <div class="relative w-full h-72 flex items-end justify-center mt-2">
+        <div class="relative w-full h-80 flex items-end justify-center mt-2">
           <!-- burning petition rising -->
           <Transition name="fade">
             <p
@@ -90,7 +97,8 @@ function saveWish() {
             alt=""
             aria-hidden="true"
             @error="smokeImageOk = false"
-            class="smoke-sprite absolute bottom-[158px] left-1/2 -translate-x-1/2 w-28 pointer-events-none mix-blend-screen"
+            :class="censerOk ? 'bottom-[184px]' : 'bottom-[158px]'"
+            class="smoke-sprite absolute left-1/2 -translate-x-1/2 w-28 pointer-events-none mix-blend-screen"
           />
           <div v-else-if="isIncenseLit" class="absolute bottom-[184px] left-1/2 -translate-x-1/2 flex gap-5 pointer-events-none">
             <span
@@ -101,7 +109,42 @@ function saveWish() {
             ></span>
           </div>
 
-          <svg viewBox="0 0 220 220" class="relative w-56 h-56" aria-hidden="true">
+          <!-- generated bronze censer; incense sticks are overlaid so they can be lit / unlit -->
+          <div v-if="censerOk" class="relative w-60 mb-1">
+            <img
+              :src="ASSETS.censer"
+              alt=""
+              aria-hidden="true"
+              @error="censerOk = false"
+              class="relative block w-full drop-shadow-[0_18px_22px_rgba(0,0,0,0.75)]"
+            />
+            <svg viewBox="0 -130 640 606" class="absolute left-0 bottom-0 w-full overflow-visible pointer-events-none" aria-hidden="true">
+              <defs>
+                <radialGradient id="ember2">
+                  <stop offset="0" stop-color="#fff1c2" />
+                  <stop offset="0.4" stop-color="#ff9a3c" />
+                  <stop offset="1" stop-color="#ff5a1f" stop-opacity="0" />
+                </radialGradient>
+                <linearGradient id="stick2" x1="0" x2="1">
+                  <stop offset="0" stop-color="#5a1c0c" />
+                  <stop offset="0.5" stop-color="#a8482a" />
+                  <stop offset="1" stop-color="#4a160a" />
+                </linearGradient>
+              </defs>
+              <g v-for="(st, i) in censerSticks" :key="i">
+                <rect :x="st.x - 4" :y="st.top" width="8" :height="st.base - st.top" rx="2" fill="url(#stick2)" />
+                <rect :x="st.x - 4" :y="st.base - 46" width="8" height="46" fill="#c23b22" />
+                <circle
+                  v-if="isIncenseLit"
+                  :cx="st.x" :cy="st.top" r="18" fill="url(#ember2)"
+                  class="animate-candle-flicker"
+                  :style="{ animationDelay: `${i * 0.4}s`, transformOrigin: `${st.x}px ${st.top}px` }"
+                />
+                <circle v-else :cx="st.x" :cy="st.top" r="4" fill="#3a2a1a" />
+              </g>
+            </svg>
+          </div>
+          <svg v-else viewBox="0 0 220 220" class="relative w-56 h-56" aria-hidden="true">
             <defs>
               <linearGradient id="bronze" x1="0" x2="1">
                 <stop offset="0" stop-color="#2a1b0c" />
