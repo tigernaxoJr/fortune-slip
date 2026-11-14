@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
-import { deckById, decks, drawFrom, type DeckId, type OracleVerse } from './data/decks'
+import { computed, nextTick, onMounted, ref } from 'vue'
+import { deckById, decks, drawFrom, loadOracleData, type DeckId, type OracleVerse } from './data/decks'
 import { defaultCspPresets, fetchModels, formatStories, interpretOracle, type CspPreset } from './services/ai'
 
 import ParticleCanvas from './components/ParticleCanvas.vue'
@@ -9,11 +9,13 @@ import BlessingSystem from './components/BlessingSystem.vue'
 import FortuneStickCylinder from './components/FortuneStickCylinder.vue'
 import OracleSlip from './components/OracleSlip.vue'
 import TalismanReading from './components/TalismanReading.vue'
+import JiaoCast from './components/JiaoCast.vue'
+import SlipCardDialog from './components/SlipCardDialog.vue'
 import BigDipper from './components/BigDipper.vue'
 import BaguaRing from './components/BaguaRing.vue'
 import { ASSETS } from './assets'
 
-import { ArrowRight, ArrowLeft, RotateCcw, Settings, X, ExternalLink, KeyRound, Trash2, RefreshCw } from 'lucide-vue-next'
+import { ArrowRight, ArrowLeft, ImageDown, RotateCcw, Settings, X, ExternalLink, KeyRound, Trash2, RefreshCw } from 'lucide-vue-next'
 
 const deckNumerals = ['壹', '貳', '參', '肆', '伍', '陸', '柒', '捌']
 const hideBrokenImage = (e: Event) => ((e.target as HTMLElement).style.display = 'none')
@@ -23,9 +25,12 @@ const maxStepReached = ref<1 | 2 | 3 | 4>(1)
 const selectedId = ref<DeckId | null>(null)
 const question = ref('')
 const result = ref<OracleVerse | null>(null)
-const resultSection = ref<HTMLElement>()
+
 const isSettingsOpen = ref(false)
 const isDrawing = ref(false)
+const isCardOpen = ref(false)
+const pendingVerse = ref<OracleVerse | null>(null)
+const jiaoRound = ref(0)
 const isInterpreting = ref(false)
 const notice = ref('')
 const aiAnswer = ref('')
@@ -81,6 +86,8 @@ function isStepDisabled(stepNum: number) {
 
 function chooseDeck(id: DeckId) {
   selectedId.value = id
+  void loadOracleData()
+  pendingVerse.value = null
   result.value = null
   aiAnswer.value = ''
   notice.value = ''
@@ -114,19 +121,47 @@ async function performRitualAndDraw() {
   notice.value = ''
   aiAnswer.value = ''
   result.value = null
+  pendingVerse.value = null
   isDrawing.value = true
   activeMobileTab.value = 'scroll'
-  await new Promise((resolve) => window.setTimeout(resolve, 3000))
-  result.value = drawFrom(selectedDeck.value)
-  isDrawing.value = false
+  try {
+    const [verse] = await Promise.all([
+      drawFrom(selectedDeck.value),
+      new Promise((resolve) => window.setTimeout(resolve, 3000)),
+    ])
+    pendingVerse.value = verse
+    jiaoRound.value++
+  } catch {
+    notice.value = '籤詩資料載入失敗，請檢查網路後再搖一次。'
+  } finally {
+    isDrawing.value = false
+  }
+}
+
+async function confirmVerse() {
+  result.value = pendingVerse.value
+  pendingVerse.value = null
   maxStepReached.value = 4
   currentStep.value = 4
   await nextTick()
-  resultSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+function rejectVerse() {
+  pendingVerse.value = null
+  notice.value = '神明未允此籤，請再靜心搖籤。'
+}
+
+onMounted(() => {
+  // fetch verse data quietly once the first screen is idle
+  const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
+  idle ? idle(() => void loadOracleData()) : window.setTimeout(() => void loadOracleData(), 1500)
+})
+
 function resetRitual() {
+  isCardOpen.value = false
   result.value = null
+  pendingVerse.value = null
   aiAnswer.value = ''
   notice.value = ''
   selectedId.value = null
@@ -265,7 +300,8 @@ async function askAi() {
         </div>
 
         <div v-else key="oracle">
-          <Transition name="fade" mode="out-in">
+          <div class="relative">
+          <Transition name="step">
             <!-- ═════════ 壹 擇聖籤 ═════════ -->
             <section v-if="currentStep === 1" key="s1">
               <!-- hero -->
@@ -398,34 +434,50 @@ async function askAi() {
 
             <!-- ═════════ 參 搖靈籤 ═════════ -->
             <section v-else-if="currentStep === 3" key="s3" class="pt-12 md:pt-16">
-              <FortuneStickCylinder
-                :is-drawing="isDrawing"
-                :selected-deck-name="selectedDeck.name"
-                :selected-deck-count="selectedDeck.count"
-                @draw="performRitualAndDraw"
-              />
+              <Transition name="fade" mode="out-in">
+                <JiaoCast
+                  v-if="pendingVerse"
+                  :key="jiaoRound"
+                  :verse-number="pendingVerse.number"
+                  @confirmed="confirmVerse"
+                  @rejected="rejectVerse"
+                />
+                <FortuneStickCylinder
+                  v-else
+                  :is-drawing="isDrawing"
+                  :selected-deck-name="selectedDeck.name"
+                  :selected-deck-count="selectedDeck.count"
+                  @draw="performRitualAndDraw"
+                />
+              </Transition>
+              <p v-if="notice && !pendingVerse" class="text-center text-sm text-[#f0a493] mt-6">{{ notice }}</p>
               <div class="text-center mt-8">
-                <button v-if="!isDrawing" type="button" @click="goToStep(2)" class="btn-ghost !text-xs">
+                <button v-if="!isDrawing && !pendingVerse" type="button" @click="goToStep(2)" class="btn-ghost !text-xs">
                   <ArrowLeft class="w-3.5 h-3.5" /><span>修改疏文</span>
                 </button>
               </div>
             </section>
 
             <!-- ═════════ 肆 解聖意 ═════════ -->
-            <section v-else-if="currentStep === 4 && result" key="s4" ref="resultSection" class="pt-10 md:pt-14 scroll-mt-28">
+            <section v-else-if="currentStep === 4 && result" key="s4" class="pt-10 md:pt-14 scroll-mt-28">
               <div class="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-5 mb-10">
                 <div class="text-center sm:text-left">
                   <p class="eyebrow">The Verse Bestowed</p>
                   <h3 class="font-serif font-bold text-3xl md:text-4xl text-gold-leaf mt-3 tracking-[0.2em]">聖意垂示</h3>
                 </div>
-                <button type="button" @click="resetRitual" class="btn-ghost">
-                  <RotateCcw class="w-4 h-4" /><span>再求一籤</span>
-                </button>
+                <div class="flex items-center gap-3">
+                  <button type="button" @click="isCardOpen = true" class="btn-ghost !text-gold-bright !border-gold/45">
+                    <ImageDown class="w-4 h-4" /><span>籤詩卡</span>
+                  </button>
+                  <button type="button" @click="resetRitual" class="btn-ghost">
+                    <RotateCcw class="w-4 h-4" /><span>再求一籤</span>
+                  </button>
+                </div>
               </div>
 
               <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 <OracleSlip
-                  class="lg:col-span-7 rise-in"
+                  class="lg:col-span-7 unfurl"
                   :class="showAiPanel ? '' : 'lg:col-start-3 lg:col-span-8'"
                   :deck="selectedDeck"
                   :verse="result"
@@ -434,7 +486,7 @@ async function askAi() {
                 <TalismanReading
                   v-if="showAiPanel"
                   class="lg:col-span-5 lg:sticky lg:top-28 rise-in"
-                  style="animation-delay: 0.25s"
+                  style="animation-delay: 1.1s"
                   :question="question"
                   :answer="aiAnswer"
                   :is-interpreting="isInterpreting"
@@ -445,6 +497,7 @@ async function askAi() {
               </div>
             </section>
           </Transition>
+          </div>
         </div>
       </Transition>
     </main>
@@ -468,6 +521,14 @@ async function askAi() {
       </div>
       <p class="pb-8 text-center text-[11px] text-smoke/70 tracking-wider px-4">籤詩為心靈寄託，重大醫療、法律、財務決定請諮詢專業人士。</p>
     </footer>
+
+    <SlipCardDialog
+      v-if="result"
+      :open="isCardOpen"
+      :deck="selectedDeck"
+      :verse="result"
+      @close="isCardOpen = false"
+    />
 
     <!-- settings modal -->
     <Teleport to="body">

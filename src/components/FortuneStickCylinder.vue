@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { onUnmounted, ref, watch } from 'vue'
+import { Smartphone } from 'lucide-vue-next'
 import BaguaRing from './BaguaRing.vue'
+import { haptic, play } from '../services/sensory'
+import { useShake } from '../composables/useShake'
 
 const props = defineProps<{
   isDrawing: boolean
@@ -14,7 +17,7 @@ const emit = defineEmits<{ (e: 'draw'): void }>()
 const stages = [
   { key: 'incense', title: '焚香稟告', sub: '三炷清香 上達天聽' },
   { key: 'shake', title: '搖動籤筒', sub: '心念專一 靈籤自出' },
-  { key: 'jiao', title: '擲筊請示', sub: '一陰一陽 ・ 聖筊允准' },
+  { key: 'out', title: '靈籤出筒', sub: '一籤躍出 ・ 天意已定' },
 ] as const
 const stageIndex = ref(-1)
 let timers: number[] = []
@@ -30,15 +33,25 @@ watch(
     }
     stageIndex.value = 0
     timers.push(window.setTimeout(() => (stageIndex.value = 1), 900))
-    timers.push(window.setTimeout(() => (stageIndex.value = 2), 2100))
+    timers.push(
+      window.setTimeout(() => {
+        stageIndex.value = 2
+        void play('stick')
+        haptic(40)
+      }, 2100),
+    )
   },
 )
 onUnmounted(() => timers.forEach(clearTimeout))
 
 function handleDraw() {
   if (props.isDrawing) return
+  void play('shake', 2.1)
+  haptic([60, 50, 60, 50, 60, 50, 60])
   emit('draw')
 }
+
+const shake = useShake(handleDraw)
 
 // sticks fanned inside the cylinder
 const sticks = Array.from({ length: 15 }, (_, i) => {
@@ -157,11 +170,6 @@ const sticks = Array.from({ length: 15 }, (_, i) => {
     <div class="h-20 mt-2 flex flex-col items-center justify-center">
       <Transition name="fade" mode="out-in">
         <div v-if="isDrawing && stageIndex >= 0" :key="stages[stageIndex].key" class="flex items-center gap-4">
-          <!-- 筊杯 -->
-          <svg v-if="stages[stageIndex].key === 'jiao'" viewBox="0 0 64 28" class="w-14 h-7" aria-hidden="true">
-            <path d="M4 22 Q16 0 28 22 Z" fill="#b02a1e" stroke="#ecd294" stroke-width="0.8" />
-            <path d="M36 8 Q48 30 60 8 Z" fill="none" stroke="#b02a1e" stroke-width="2" />
-          </svg>
           <div>
             <p class="font-brush text-2xl text-gold-bright tracking-[0.3em]">{{ stages[stageIndex].title }}</p>
             <p class="text-xs text-mist tracking-[0.25em] mt-1">{{ stages[stageIndex].sub }}</p>
@@ -174,6 +182,16 @@ const sticks = Array.from({ length: 15 }, (_, i) => {
     <button type="button" @click="handleDraw" :disabled="isDrawing" class="btn-cinnabar text-base px-10 mt-2">
       {{ isDrawing ? '籤筒晃動・誠心叩問' : '誠心搖籤' }}
     </button>
+
+    <div v-if="shake.supported && !isDrawing" class="mt-5">
+      <p v-if="shake.active.value" class="inline-flex items-center gap-2 text-xs text-gold tracking-[0.2em]">
+        <Smartphone class="w-4 h-4 animate-shake-stick" />雙手持機 ・ 用力搖動即可求籤
+      </p>
+      <p v-else-if="shake.denied.value" class="text-xs text-smoke tracking-wider">未取得動作感測權限，請點擊籤筒求籤</p>
+      <button v-else type="button" class="btn-ghost !text-xs" @click="shake.enable()">
+        <Smartphone class="w-4 h-4" />改用搖手機求籤
+      </button>
+    </div>
   </div>
 </template>
 

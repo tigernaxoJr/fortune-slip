@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { OracleDeck, OracleVerse } from '../data/decks'
+import { verseLines, type OracleDeck, type OracleVerse } from '../data/decks'
 import type { FormattedStory } from '../services/ai'
 import { ASSETS, cssLayer } from '../assets'
 
@@ -20,7 +20,8 @@ function toHanzi(n: number): string {
 }
 
 const hanziNumber = computed(() => toHanzi(props.verse.number))
-const longest = computed(() => Math.max(...props.verse.lines.map((l) => [...l].length)))
+const lines = computed(() => verseLines(props.verse))
+const longest = computed(() => Math.max(...lines.value.map((l) => [...l].length)))
 const verseSize = computed(() =>
   longest.value <= 5 ? 'clamp(1.7rem, 5.2vw, 2.4rem)'
   : longest.value <= 8 ? 'clamp(1.45rem, 4.4vw, 2.05rem)'
@@ -49,7 +50,7 @@ const paperStyle = { '--paper-asset': cssLayer(ASSETS.paperXuan) }
           v-if="verse.fortune"
           class="seal text-2xl sm:text-3xl animate-stamp shrink-0"
           :class="fortuneTone === 'ink' ? '!text-[#2b1d14]' : ''"
-          style="animation-delay: 0.6s"
+          style="animation-delay: 1.5s"
         >
           <span class="writing-vertical tracking-[0.1em]">{{ verse.fortune }}</span>
         </div>
@@ -80,10 +81,10 @@ const paperStyle = { '--paper-asset': cssLayer(ASSETS.paperXuan) }
           :style="{ fontSize: verseSize, letterSpacing: '0.32em', lineHeight: 2.1 }"
         >
           <p
-            v-for="(line, i) in verse.lines"
+            v-for="(line, i) in lines"
             :key="i"
             class="rise-in"
-            :style="{ animationDelay: `${0.15 + i * 0.18}s` }"
+            :style="{ animationDelay: `${1 + i * 0.2}s` }"
           >{{ line }}</p>
         </div>
       </div>

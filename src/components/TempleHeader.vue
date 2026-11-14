@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Settings } from 'lucide-vue-next'
+import { Settings, Volume2, VolumeX } from 'lucide-vue-next'
+import { play, preloadSounds, soundEnabled } from '../services/sensory'
 import BaguaRing from './BaguaRing.vue'
 
 defineProps<{
@@ -16,6 +17,14 @@ const emit = defineEmits<{
   (e: 'reset'): void
   (e: 'switch-tab', tab: 'oracle' | 'blessing'): void
 }>()
+
+function toggleSound() {
+  soundEnabled.value = !soundEnabled.value
+  if (soundEnabled.value) {
+    preloadSounds()
+    void play('bell')
+  }
+}
 
 const tabs = [
   { id: 'oracle', label: '求籤解意' },
@@ -59,7 +68,7 @@ const tabs = [
       </nav>
 
       <!-- step progress (desktop) -->
-      <ol v-if="activeMainTab === 'oracle'" class="hidden lg:flex items-center">
+      <ol v-if="activeMainTab === 'oracle'" class="hidden xl:flex items-center">
         <li v-for="(s, i) in steps" :key="s.num" class="flex items-center">
           <button
             type="button"
@@ -84,21 +93,35 @@ const tabs = [
         </li>
       </ol>
 
+      <div class="flex items-center gap-2 shrink-0">
+      <button
+        type="button"
+        @click="toggleSound"
+        class="btn-ghost !p-2.5"
+        :class="soundEnabled ? '!text-gold-bright !border-gold/50' : ''"
+        :aria-pressed="soundEnabled"
+        :title="soundEnabled ? '關閉音效' : '開啟音效'"
+        :aria-label="soundEnabled ? '關閉音效' : '開啟音效'"
+      >
+        <Volume2 v-if="soundEnabled" class="w-4 h-4" />
+        <VolumeX v-else class="w-4 h-4" />
+      </button>
       <button
         type="button"
         @click="emit('open-settings')"
-        class="btn-ghost !p-2.5 shrink-0"
+        class="btn-ghost !p-2.5"
         title="AI 神諭設定"
         aria-label="AI 神諭設定"
       >
         <Settings class="w-4 h-4" />
       </button>
+      </div>
     </div>
 
     <!-- step progress (mobile) -->
     <ol
       v-if="activeMainTab === 'oracle'"
-      class="relative lg:hidden flex items-center justify-between max-w-md mx-auto px-5 pb-2.5 pt-1"
+      class="relative xl:hidden flex items-center justify-between max-w-md mx-auto px-5 pb-2.5 pt-1"
     >
       <li v-for="s in steps" :key="s.num">
         <button

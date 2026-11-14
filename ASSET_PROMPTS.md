@@ -85,3 +85,31 @@ Traditional Chinese auspicious cloud (xiangyun) ornament, horizontal symmetrical
 ```
 Cinematic banner of a Taoist temple fortune-telling scene at night: a red lacquered fortune-stick cylinder on the left third with one wooden stick raised above the others, glowing with golden light, incense smoke swirling, faint Bagua trigram ring glowing in gold behind it, deep black and cinnabar red background with warm candlelight, empty dark space on the right two-thirds for a title, no text
 ```
+
+---
+
+# 音效（選用）
+
+放到 `public/assets/sfx/`，**mp3、檔名完全一致**。沒放檔案時程式會用 Web Audio 即時合成，所以現在已經有聲音（右上角喇叭開啟）；放了檔案就自動改用錄音。適合用 ElevenLabs Sound Effects、Stable Audio 等音效生成工具。
+
+建議：單聲道、44.1 kHz、128 kbps、頭尾不留空白、音量正規化到 -14 LUFS 左右。
+
+## `shake.mp3` — 搖籤筒（約 2.5 秒，程式會在 2.1 秒時截斷）
+```
+Close-up foley of a bamboo fortune-stick cylinder being shaken rhythmically by hand, dozens of thin wooden sticks rattling and clacking against each other inside a lacquered wooden tube, about four shake cycles, dry room, intimate, no music, no voices
+```
+
+## `stick.mp3` — 一支籤落地（約 0.6 秒）
+```
+A single thin bamboo stick dropping out of a wooden cylinder and clattering onto a wooden altar table, two small bounces, crisp and close, no reverb tail, no music
+```
+
+## `jiao.mp3` — 擲筊落地（約 0.8 秒）
+```
+Two crescent-shaped wooden divination blocks (jiaobei) thrown onto a stone temple floor, solid hollow wooden clack on impact with a couple of small bounces and a short wobble, close-mic foley, slight stone room reflection, no music, no voices
+```
+
+## `bell.mp3` — 磬聲／聖筊確認（約 4 秒）
+```
+A single strike of a bronze Buddhist-Taoist temple bowl bell (qing), soft wooden mallet, warm pure tone with long shimmering decay, gentle temple hall reverb, calm and sacred, no music, no voices
+```
