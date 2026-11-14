@@ -14,6 +14,7 @@ import SlipCardDialog from './components/SlipCardDialog.vue'
 import BigDipper from './components/BigDipper.vue'
 import BaguaRing from './components/BaguaRing.vue'
 import { ASSETS } from './assets'
+import { play } from './services/sensory'
 
 import { ArrowRight, ArrowLeft, ImageDown, RotateCcw, Settings, X, ExternalLink, KeyRound, Trash2, RefreshCw } from 'lucide-vue-next'
 
@@ -143,6 +144,7 @@ async function confirmVerse() {
   pendingVerse.value = null
   maxStepReached.value = 4
   currentStep.value = 4
+  void play('unfurl')
   await nextTick()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -433,7 +435,15 @@ async function askAi() {
             </section>
 
             <!-- ═════════ 參 搖靈籤 ═════════ -->
-            <section v-else-if="currentStep === 3" key="s3" class="pt-12 md:pt-16">
+            <section v-else-if="currentStep === 3" key="s3" class="relative pt-12 md:pt-16">
+              <img
+                :src="ASSETS.shrineAltar"
+                alt=""
+                aria-hidden="true"
+                @error="hideBrokenImage"
+                class="absolute left-1/2 -top-8 -translate-x-1/2 w-[min(1200px,160vw)] max-w-none opacity-[0.32] pointer-events-none [mask-image:radial-gradient(50%_55%_at_50%_40%,#000_25%,transparent_100%)]"
+              />
+              <div class="relative">
               <Transition name="fade" mode="out-in">
                 <JiaoCast
                   v-if="pendingVerse"
@@ -455,6 +465,7 @@ async function askAi() {
                 <button v-if="!isDrawing && !pendingVerse" type="button" @click="goToStep(2)" class="btn-ghost !text-xs">
                   <ArrowLeft class="w-3.5 h-3.5" /><span>修改疏文</span>
                 </button>
+              </div>
               </div>
             </section>
 
@@ -503,6 +514,13 @@ async function askAi() {
     </main>
 
     <footer class="relative z-10 mt-16">
+      <img
+        :src="ASSETS.cloudOrnament"
+        alt=""
+        aria-hidden="true"
+        @error="hideBrokenImage"
+        class="block mx-auto w-[min(560px,86vw)] mb-4 opacity-70 pointer-events-none"
+      />
       <div class="rule-huiwen"></div>
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-smoke">
         <div class="flex items-center gap-3">

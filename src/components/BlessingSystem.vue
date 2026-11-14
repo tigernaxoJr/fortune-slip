@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Flame, Send } from 'lucide-vue-next'
 import { ASSETS } from '../assets'
+import { play } from '../services/sensory'
 
 interface LampItem {
   id: string
@@ -24,14 +25,25 @@ const customWish = ref('')
 const burningWish = ref('')
 const wishSaved = ref(false)
 const lampImageOk = ref(true)
+const smokeImageOk = ref(true)
+
+function toggleIncense() {
+  isIncenseLit.value = !isIncenseLit.value
+  if (isIncenseLit.value) void play('ignite')
+}
 
 function toggleLamp(id: string) {
   const next = new Set(litLamps.value)
-  next.has(id) ? next.delete(id) : next.add(id)
+  if (next.has(id)) next.delete(id)
+  else {
+    next.add(id)
+    void play('ignite')
+  }
   litLamps.value = next
 }
 
 function lightAllLamps() {
+  if (litLamps.value.size < lampTypes.length) void play('ignite')
   litLamps.value = new Set(lampTypes.map((l) => l.id))
 }
 
@@ -41,6 +53,7 @@ function saveWish() {
   customWish.value = ''
   wishSaved.value = true
   isIncenseLit.value = true
+  void play('burn', 3)
   window.setTimeout(() => {
     wishSaved.value = false
     burningWish.value = ''
@@ -70,8 +83,16 @@ function saveWish() {
             >{{ burningWish }}</p>
           </Transition>
 
-          <!-- smoke -->
-          <div v-if="isIncenseLit" class="absolute bottom-[184px] left-1/2 -translate-x-1/2 flex gap-5 pointer-events-none">
+          <!-- smoke: generated wisp sprite if present, else soft CSS columns -->
+          <img
+            v-if="isIncenseLit && smokeImageOk"
+            :src="ASSETS.smokeWisp"
+            alt=""
+            aria-hidden="true"
+            @error="smokeImageOk = false"
+            class="smoke-sprite absolute bottom-[158px] left-1/2 -translate-x-1/2 w-28 pointer-events-none mix-blend-screen"
+          />
+          <div v-else-if="isIncenseLit" class="absolute bottom-[184px] left-1/2 -translate-x-1/2 flex gap-5 pointer-events-none">
             <span
               v-for="n in 3"
               :key="n"
@@ -134,7 +155,7 @@ function saveWish() {
           {{ isIncenseLit ? '香煙裊裊，上達天聽。靜心凝神，稟明所祈。' : '點燃三炷清香，敬天、敬神、敬祖。' }}
         </p>
 
-        <button type="button" @click="isIncenseLit = !isIncenseLit" class="btn-ghost mt-4">
+        <button type="button" @click="toggleIncense" class="btn-ghost mt-4">
           <Flame class="w-4 h-4" :class="isIncenseLit ? 'text-[#ff9a3c]' : ''" />
           <span>{{ isIncenseLit ? '清香正燃' : '點燃三炷清香' }}</span>
         </button>
@@ -221,6 +242,16 @@ function saveWish() {
 </template>
 
 <style scoped>
+.smoke-sprite {
+  opacity: 0.7;
+  transform-origin: 50% 100%;
+  animation: smokeDrift 9s ease-in-out infinite alternate;
+  mask-image: linear-gradient(0deg, transparent 0%, #000 20%, #000 55%, transparent 92%);
+}
+@keyframes smokeDrift {
+  0% { transform: skewX(-4deg) scaleY(0.96); opacity: 0.55; }
+  100% { transform: translateX(4px) skewX(5deg) scaleY(1.05); opacity: 0.8; }
+}
 .wish-burn {
   animation: burnUp 3.2s ease-in forwards;
 }

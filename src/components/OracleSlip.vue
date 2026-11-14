@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { play } from '../services/sensory'
 import { verseLines, type OracleDeck, type OracleVerse } from '../data/decks'
 import type { FormattedStory } from '../services/ai'
 import { ASSETS, cssLayer } from '../assets'
@@ -33,6 +34,12 @@ const fortuneTone = computed(() => {
   return 'cinnabar'
 })
 const paperStyle = { '--paper-asset': cssLayer(ASSETS.paperXuan) }
+
+let stampTimer = 0
+onMounted(() => {
+  if (props.verse.fortune) stampTimer = window.setTimeout(() => void play('stamp'), 1650)
+})
+onUnmounted(() => clearTimeout(stampTimer))
 </script>
 
 <template>

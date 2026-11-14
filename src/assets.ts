@@ -10,8 +10,10 @@ export const ASSETS = {
   altarHero: assetUrl('hero-altar.webp'),
   paperXuan: assetUrl('paper-xuan.webp'),
   paperTalisman: assetUrl('paper-talisman.webp'),
-  cloudOrnament: assetUrl('ornament-xiangyun.png'),
-  lotusLamp: assetUrl('lamp-lotus.png'),
+  cloudOrnament: assetUrl('ornament-xiangyun.webp'),
+  lotusLamp: assetUrl('lamp-lotus.webp'),
+  shrineAltar: assetUrl('bg-shrine-altar.webp'),
+  smokeWisp: assetUrl('smoke-wisp.webp'),
 } as const
 
 /** CSS custom-property value for an optional background layer. */
